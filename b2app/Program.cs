@@ -18,7 +18,7 @@ namespace b2app
 
     static void Main(string[] args)
     {
-      
+#if dob2
       var opts = new B2Net.Models.B2Options();
       opts.AccountId = "";
       opts.ApplicationKey = "";
@@ -30,7 +30,7 @@ namespace b2app
 
       var bkt = blst.FirstOrDefault();
       var flst = x.Files.GetList(bkt.BucketId);
-
+#endif
       /* list dir.
        * put files into various parts.
        */
@@ -84,11 +84,39 @@ namespace b2app
       cp.ProviderType = 1;
       cp.Flags = CspProviderFlags.UseArchivableKey;
       _rsa = new RSACryptoServiceProvider();
-      var pkstr = System.IO.File.ReadAllText("c:\\tmp\\rsa_pubkey.xml");
+      var pkstr = System.IO.File.ReadAllText("c:\\tmp\\rsa_privatekey.xml");
+      //"c:\\tmp\\rsa_pubkey.xml");
 
       _rsa.FromXmlString(pkstr);
 
-      var res = _rsa.Encrypt(new byte[] {65,66,67}, false);
+      var foo = System.Security.Cryptography.RandomNumberGenerator.Create();
+      byte[] bs = new byte[256];
+      foo.GetBytes(bs);
+
+      PseudoRandom.MersenneTwister mt = new PseudoRandom.MersenneTwister();
+      
+      /* hash original contents.
+       * encrypt that hash with the public key.
+       * that's now an attribute on the files.
+       */
+      
+      var sha = SHA384.Create();
+
+      var fs = new System.IO.FileStream("c:\\temp\\dumps\\ttirdreport.20170116_134248.xml", System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite);
+      var hash = sha.ComputeHash(fs);
+
+      Aes aes = Aes.Create();
+      aes.KeySize = 256;
+      bs = new byte[aes.KeySize / 8];
+      foo.GetBytes(bs);
+      aes.Key = bs;
+
+      bs = new byte[aes.BlockSize / 8];
+      foo.GetBytes(bs);
+      aes.IV = bs;
+      
+      var res = _rsa.Encrypt(hash, false);
+      var b64str = Convert.ToBase64String(res);
       var r2 = _rsa.Decrypt(res, false);
     }
 
