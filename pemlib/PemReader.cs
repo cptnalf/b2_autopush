@@ -23,6 +23,9 @@ using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Pkcs;
 #endif
 
+/* stolen from:
+ * https://github.com/bcgit/bc-csharp/tree/master/crypto/src/util/collections
+ */
 namespace Org.BouncyCastle.OpenSsl
 {
   public interface IPasswordFinder
