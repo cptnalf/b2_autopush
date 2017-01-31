@@ -110,26 +110,29 @@ namespace Org.BouncyCastle.OpenSsl
           IDictionary<string,string> fields = new Dictionary<string,string>();
           foreach (PemHeader header in pemObject.Headers) { fields[header.Name] = header.Value; }
 
-          string procType = (string) fields["Proc-Type"];
-
-          if (procType == "4,ENCRYPTED")
+          if (fields.ContainsKey("Proc-Type"))
             {
-              if (pFinder == null) { throw new PasswordException("No password finder specified, but a password is required"); }
+              string procType = (string) fields["Proc-Type"];
 
-              char[] password = pFinder.GetPassword();
+              if (procType == "4,ENCRYPTED")
+                {
+                  if (pFinder == null) { throw new PasswordException("No password finder specified, but a password is required"); }
 
-              if (password == null) { throw new PasswordException("Password is null, but a password is required"); }
+                  char[] password = pFinder.GetPassword();
 
-              string dekInfo = (string) fields["DEK-Info"];
-              string[] tknz = dekInfo.Split(',');
+                  if (password == null) { throw new PasswordException("Password is null, but a password is required"); }
 
-              string dekAlgName = tknz[0].Trim();
-              byte[] iv = Hex.Decode(tknz[1].Trim());
+                  string dekInfo = (string) fields["DEK-Info"];
+                  string[] tknz = dekInfo.Split(',');
 
-              throw new NotImplementedException("Have not pulled in the entire crypto library.");
-              /*
-              keyBytes = PemUtilities.Crypt(false, keyBytes, password, dekAlgName, iv);
-              */
+                  string dekAlgName = tknz[0].Trim();
+                  byte[] iv = Hex.Decode(tknz[1].Trim());
+
+                  throw new NotImplementedException("Have not pulled in the entire crypto library.");
+                  /*
+                  keyBytes = PemUtilities.Crypt(false, keyBytes, password, dekAlgName, iv);
+                  */
+                }
             }
 
             try
