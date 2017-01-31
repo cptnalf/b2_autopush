@@ -89,6 +89,12 @@ namespace TestBackupLib
         , Modulus=rsak.Modulus.ToByteArray()
         };
       rsa.ImportParameters(rsaparams);
+      /*
+      http://stackoverflow.com/questions/21702662/system-security-cryptography-cryptographicexception-bad-length-in-rsacryptoser
+      * sigh. had i known that i can't encrypt a shitton with RSA
+      * i might not have tried to do so.
+      * the 'data' to the rsa encryption bit needs to be less than 200 bytes?
+      */
       var data = Encoding.UTF8.GetBytes("blargity blarg");
       var bytes = rsa.Encrypt(data, RSAEncryptionPadding.OaepSHA1);
       Assert.IsNotNull(bytes);
