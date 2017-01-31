@@ -84,7 +84,7 @@ namespace b2app
       */
 
       var p = new Program();
-      p._loadKey("c:\\tmp\\id_rsa_1", string.Empty);
+      p._loadKey("c:\\tmp\\id_rsa_1_pub", string.Empty);
     }
 
     private void _loadKey(string file, string pw)
@@ -92,16 +92,25 @@ namespace b2app
       AsymmetricCipherKeyPair p;
       var pemrdr = new Org.BouncyCastle.OpenSsl.PemReader(new System.IO.StreamReader(file));
       var o = pemrdr.ReadObject();
-      p = (AsymmetricCipherKeyPair)o;
+      //p = (AsymmetricCipherKeyPair)o;
 
-      var rkp = (Org.BouncyCastle.Crypto.Parameters.RsaPrivateCrtKeyParameters)p.Private;
-      var rku = (Org.BouncyCastle.Crypto.Parameters.RsaKeyParameters)p.Public;
+      //var rkp = (Org.BouncyCastle.Crypto.Parameters.RsaPrivateCrtKeyParameters)p.Private;
+      //var rku = (Org.BouncyCastle.Crypto.Parameters.RsaKeyParameters)p.Public;
+      var rku = (Org.BouncyCastle.Crypto.Parameters.RsaKeyParameters)o;
+
       var rsaparams = new RSAParameters();
       rsaparams.Modulus = rku.Modulus.ToByteArray();
       rsaparams.Exponent = rku.Exponent.ToByteArray();
 
       var rsa = RSA.Create();
       rsa.ImportParameters(rsaparams);
+      {
+        var data = new byte[120];
+        for(int i=0; i< data.Length; ++i) { data[i] = rsaparams.Modulus[i]; }
+        RSAEncryptionPadding ep = RSAEncryptionPadding.CreateOaep(HashAlgorithmName.SHA1);
+        
+        var buffer = rsa.Encrypt(data, ep);
+      }
       rsa.Dispose();
       rsa = null;
       
