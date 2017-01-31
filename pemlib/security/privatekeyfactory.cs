@@ -177,6 +177,7 @@ namespace Org.BouncyCastle.Security
             }
         }
 
+        /*
         public static AsymmetricKeyParameter DecryptKey(char[] passPhrase,
             EncryptedPrivateKeyInfo	encInfo)
         {
@@ -203,7 +204,8 @@ namespace Org.BouncyCastle.Security
         {
             return DecryptKey(passPhrase, EncryptedPrivateKeyInfo.GetInstance(asn1Object));
         }
-
+        */
+        /*
         public static byte[] EncryptKey(
             DerObjectIdentifier		algorithm,
             char[]					passPhrase,
@@ -225,5 +227,6 @@ namespace Org.BouncyCastle.Security
             return EncryptedPrivateKeyInfoFactory.CreateEncryptedPrivateKeyInfo(
                 algorithm, passPhrase, salt, iterationCount, key).GetEncoded();
         }
+        */
     }
 }

@@ -211,7 +211,8 @@ namespace Org.BouncyCastle.OpenSsl
                         if (password == null)
                             throw new PasswordException("Password is null, but a password is required");
 
-                        return PrivateKeyFactory.DecryptKey(password, EncryptedPrivateKeyInfo.GetInstance(seq));
+                        throw new NotImplementedException("decrypting encrypted keys is not currently supported");
+                        //return PrivateKeyFactory.DecryptKey(password, EncryptedPrivateKeyInfo.GetInstance(seq));
                     }
 
                     case "":

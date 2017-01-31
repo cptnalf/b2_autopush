@@ -177,7 +177,7 @@ namespace Org.BouncyCastle.Math
         private const int chunk2 = 1, chunk8 = 1, chunk10 = 19, chunk16 = 16;
         private static readonly BigInteger radix2, radix2E, radix8, radix8E, radix10, radix10E, radix16, radix16E;
 
-        private static readonly SecureRandom RandomSource = new SecureRandom();
+        //private static readonly SecureRandom RandomSource = new SecureRandom();
 
         /*
          * These are the threshold bit-lengths (of an exponent) where we increase the window size.
@@ -244,15 +244,9 @@ namespace Org.BouncyCastle.Math
             return (nBits + BitsPerByte - 1) / BitsPerByte;
         }
 
-        internal static BigInteger Arbitrary(int sizeInBits)
-        {
-            return new BigInteger(sizeInBits, RandomSource);
-        }
+    //internal static BigInteger Arbitrary(int sizeInBits) { return new BigInteger(sizeInBits, RandomSource); }
 
-        private BigInteger(
-            int		signum,
-            int[]	mag,
-            bool	checkMag)
+        private BigInteger( int		signum, int[]	mag, bool	checkMag)
         {
             if (checkMag)
             {
@@ -290,15 +284,9 @@ namespace Org.BouncyCastle.Math
             }
         }
 
-        public BigInteger(
-            string value)
-            : this(value, 10)
-        {
-        }
+        public BigInteger( string value) : this(value, 10) { }
 
-        public BigInteger(
-            string	str,
-            int		radix)
+        public BigInteger( string	str, int		radix)
         {
             if (str.Length == 0)
                 throw new FormatException("Zero length BigInteger");
@@ -477,16 +465,9 @@ namespace Org.BouncyCastle.Math
             magnitude = b.magnitude;
         }
 
-        public BigInteger(
-            byte[] bytes)
-            : this(bytes, 0, bytes.Length)
-        {
-        }
+        public BigInteger( byte[] bytes) : this(bytes, 0, bytes.Length) { }
 
-        public BigInteger(
-            byte[]	bytes,
-            int		offset,
-            int		length)
+        public BigInteger( byte[] bytes, int offset, int length) 
         {
             if (length == 0)
                 throw new FormatException("Zero length BigInteger");
@@ -539,10 +520,7 @@ namespace Org.BouncyCastle.Math
             }
         }
 
-        private static int[] MakeMagnitude(
-            byte[]	bytes,
-            int		offset,
-            int		length)
+        private static int[] MakeMagnitude( byte[] bytes, int offset, int length)
         {
             int end = offset + length;
 
@@ -596,18 +574,9 @@ namespace Org.BouncyCastle.Math
             return mag;
         }
 
-        public BigInteger(
-            int		sign,
-            byte[]	bytes)
-            : this(sign, bytes, 0, bytes.Length)
-        {
-        }
+        public BigInteger( int sign, byte[] bytes) : this(sign, bytes, 0, bytes.Length) { }
 
-        public BigInteger(
-            int		sign,
-            byte[]	bytes,
-            int		offset,
-            int		length)
+        public BigInteger( int sign, byte[] bytes, int offset, int length)
         {
             if (sign < -1 || sign > 1)
                 throw new FormatException("Invalid sign value");
@@ -625,9 +594,7 @@ namespace Org.BouncyCastle.Math
             }
         }
 
-        public BigInteger(
-            int		sizeInBits,
-            Random	random)
+        public BigInteger( int sizeInBits, Random random)
         {
             if (sizeInBits < 0)
                 throw new ArgumentException("sizeInBits must be non-negative");
@@ -654,6 +621,7 @@ namespace Org.BouncyCastle.Math
             this.sign = this.magnitude.Length < 1 ? 0 : 1;
         }
 
+#if false
         public BigInteger(
             int		bitLength,
             int		certainty,
@@ -712,6 +680,7 @@ namespace Org.BouncyCastle.Math
                 }
             }
         }
+#endif
 
         public BigInteger Abs()
         {
@@ -1327,6 +1296,7 @@ namespace Org.BouncyCastle.Math
             }
         }
 
+#if false
         /**
          * return whether or not a BigInteger is probably prime with a
          * probability of 1 - (1/2)**certainty.
@@ -1336,7 +1306,7 @@ namespace Org.BouncyCastle.Math
         {
             return IsProbablePrime(certainty, false);
         }
-
+        
         internal bool IsProbablePrime(int certainty, bool randomlySelected)
         {
             if (certainty <= 0)
@@ -1399,6 +1369,7 @@ namespace Org.BouncyCastle.Math
 //
 //			return rbTest;
         }
+#endif
 
         public bool RabinMillerTest(int certainty, Random random)
         {
@@ -2502,6 +2473,7 @@ namespace Org.BouncyCastle.Math
             return new BigInteger(-sign, magnitude, false);
         }
 
+#if false
         public BigInteger NextProbablePrime()
         {
             if (sign < 0)
@@ -2519,6 +2491,7 @@ namespace Org.BouncyCastle.Math
 
             return n;
         }
+#endif
 
         public BigInteger Not()
         {
@@ -2567,12 +2540,7 @@ namespace Org.BouncyCastle.Math
             return y;
         }
 
-        public static BigInteger ProbablePrime(
-            int bitLength,
-            Random random)
-        {
-            return new BigInteger(bitLength, 100, random);
-        }
+//public static BigInteger ProbablePrime( int bitLength, Random random) { return new BigInteger(bitLength, 100, random); }
 
         private int Remainder(
             int m)

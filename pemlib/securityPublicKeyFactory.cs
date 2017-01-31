@@ -98,6 +98,7 @@ namespace Org.BouncyCastle.Security
 
                 return ReadPkcsDHParam(algOid, derY.Value, seq);
             }
+#if false
             else if (algOid.Equals(OiwObjectIdentifiers.ElGamalAlgorithm))
             {
                 ElGamalParameter para = new ElGamalParameter(
@@ -108,6 +109,7 @@ namespace Org.BouncyCastle.Security
                     derY.Value,
                     new ElGamalParameters(para.P, para.G));
             }
+#endif
             else if (algOid.Equals(X9ObjectIdentifiers.IdDsa)
                 || algOid.Equals(OiwObjectIdentifiers.DsaWithSha1))
             {
@@ -188,7 +190,6 @@ namespace Org.BouncyCastle.Security
 
                 return new ECPublicKeyParameters("ECGOST3410", q, gostParams.PublicKeyParamSet);
             }
-#endif
             else if (algOid.Equals(CryptoProObjectIdentifiers.GostR3410x94))
             {
                 Gost3410PublicKeyAlgParameters algParams = new Gost3410PublicKeyAlgParameters(
@@ -216,6 +217,7 @@ namespace Org.BouncyCastle.Security
 
                 return new Gost3410PublicKeyParameters(y, algParams.PublicKeyParamSet);
             }
+#endif
             else
             {
                 throw new SecurityUtilityException("algorithm identifier in key not recognised: " + algOid);

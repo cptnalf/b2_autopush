@@ -96,10 +96,7 @@ namespace Org.BouncyCastle.Asn1.CryptoPro
         * returns an enumeration containing the name strings for parameters
         * contained in this structure.
         */
-        public static IEnumerable Names
-        {
-			get { return new EnumerableProxy(objIds.Keys); }
-        }
+        public static IEnumerable Names { get { return objIds.Keys; } }
 
 		public static Gost3410ParamSetParameters GetByName(
             string name)
