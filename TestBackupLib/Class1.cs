@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 namespace TestBackupLib
 {
   using Microsoft.VisualStudio.TestTools.UnitTesting;
+  using Encoding = System.Text.Encoding;
+  using System.Security.Cryptography;
 
   [TestClass]
   public class Class1
@@ -79,6 +81,18 @@ namespace TestBackupLib
       var rsak = p as Org.BouncyCastle.Crypto.Parameters.RsaKeyParameters;
       Assert.IsNotNull(rsak);
       Assert.IsFalse(rsak.IsPrivate);
+
+      var rsa = RSA.Create();
+      var rsaparams = new RSAParameters 
+        { 
+        Exponent=rsak.Exponent.ToByteArray()
+        , Modulus=rsak.Modulus.ToByteArray()
+        };
+      rsa.ImportParameters(rsaparams);
+      var data = Encoding.UTF8.GetBytes("blargity blarg");
+      var bytes = rsa.Encrypt(data, RSAEncryptionPadding.OaepSHA1);
+      Assert.IsNotNull(bytes);
+      Assert.IsTrue(bytes.Length > 0);
     }
     
     [TestMethod]
