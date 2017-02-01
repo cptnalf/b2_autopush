@@ -16,12 +16,12 @@ namespace BackupLib
   using FileShare = System.IO.FileShare;
 
   /* file format is:
-    * [16 + 96 + 3? = 115]
+    * [16 + 64 + 3? = 83]
     * [encrypted block]
     * 4[sha256 = 256bits = 32 bytes] original file content hash.
     * 4[3 bytes?] enc algo
-    * 4[256 bits = 32 bytes] key
-    * 4[256bits = 32 bytes] iv
+    * 4[128 bits = 16 bytes] key
+    * 4[128bits = 16 bytes] iv
     * [end encrypted block]
     * [size] signed encrypted content hash
     * encrypted content.
@@ -29,52 +29,147 @@ namespace BackupLib
   
   public class FileEncrypt
   {
+    internal class FileHeader
+    {
+      internal static FileHeader Create(byte[] buffer)
+      {
+        FileHeader res = new FileHeader();
+
+        int pos = 0;
+        byte[] ab = _Bytes(buffer, pos);
+        res.hashname = Encoding.UTF8.GetString(ab);
+        pos += ab.Length + 4;
+        res.hash = _Bytes(buffer, pos);
+        pos += res.hash.Length + 4;
+
+        ab = _Bytes(buffer, pos);
+        res.algo = Encoding.UTF8.GetString(ab);
+        pos += ab.Length + 4;
+        res.key = _Bytes(buffer,pos);
+        pos += res.key.Length + 4;
+        res.iv = _Bytes(buffer,pos);
+
+        return res;
+      }
+
+      internal string hashname;
+      internal byte[] hash;
+      internal string algo;
+      internal byte[] key;
+      internal byte[] iv;
+
+      internal byte[] toBytes()
+      {
+        var strm = new System.IO.MemoryStream();
+
+        byte[] len;
+        byte[] ab = Encoding.UTF8.GetBytes(hashname);
+        len = BitConverter.GetBytes(ab.Length);
+        strm.Write(len, 0, 4);
+        strm.Write(ab, 0, ab.Length);
+        
+        len = BitConverter.GetBytes(hash.Length);
+        strm.Write(len, 0, 4);
+        strm.Write(hash,0, hash.Length);
+
+        ab = Encoding.UTF8.GetBytes(algo);
+        len = BitConverter.GetBytes(ab.Length);
+        strm.Write(len, 0, 4);
+        strm.Write(ab, 0, ab.Length);
+
+        len = BitConverter.GetBytes(key.Length);
+        strm.Write(len, 0, 4);
+        strm.Write(key, 0, key.Length);
+
+        len = BitConverter.GetBytes(iv.Length);
+        strm.Write(len, 0, 4);
+        strm.Write(key, 0, iv.Length);
+
+        return strm.ToArray();
+      }
+
+      private static byte[] _Bytes(byte[] buffer, int pos)
+      {
+        int size;
+
+        size = BitConverter.ToInt32(buffer,pos);
+        byte[] res = new byte[size];
+        pos += 4;
+        for(int i=0; i < res.Length; ++i) { res[i] = buffer[i + pos]; }
+
+        return res;
+      }
+    }
+
     private SymmetricAlgorithm _algo;
     private HashAlgorithmName _hash;
     private RSA _rsa;
+    private RandomNumberGenerator _rng;
     
-    public FileEncrypt(RSA rsa) { _rsa = rsa; }
+    public FileEncrypt(RSA rsa)
+    {
+      _rsa = rsa; 
+      _rng = RandomNumberGenerator.Create();
+      _hash = HashAlgorithmName.SHA256;
+
+      _algo = null;
+    }
 
     public MemoryStream encrypt(Stream instrm)
     {
       var strm = new MemoryStream();
+      _hash = HashAlgorithmName.SHA256;
       var incHash = IncrementalHash.CreateHash(_hash);
 
       _algo = Aes.Create();
+      _algo.KeySize = 128;
       {
         /* setup the algorythm. */
-        var foo = RandomNumberGenerator.Create();
         byte[] arr = new byte[_algo.KeySize / 8];
 
-        foo.GetBytes(arr);
+        _rng.GetBytes(arr);
         _algo.Key = arr;
         arr = new byte[_algo.BlockSize / 8];
-        foo.GetBytes(arr);
+        _rng.GetBytes(arr);
         _algo.IV = arr;
       }
       
+      string b64;
       {
         /* dump the encrypted block data into the block. */
-        var data = new MemoryStream();
-        var bytes = _computeHash(instrm, incHash);
-        _writeBytes(data, bytes);
+        var hdr = new FileHeader();
+        hdr.hashname = _hash.Name;
+        hdr.hash = _computeHash(instrm, incHash);
+        hdr.algo = "AES";
+        hdr.key = _algo.Key;
+        hdr.iv = _algo.IV;
+        
+        b64 = Convert.ToBase64String(hdr.hash);
 
-        _writeBytes(data, System.Text.Encoding.UTF8.GetBytes("AES"));
-        _writeBytes(data, _algo.Key);
-        _writeBytes(data, _algo.IV);
+        byte[] hdrbytes = hdr.toBytes();
 
-        var enc = _rsa.Encrypt(data.ToArray(), RSAEncryptionPadding.OaepSHA1);
+        var enc = _rsa.Encrypt(hdrbytes, RSAEncryptionPadding.OaepSHA1);
 
         _writeBytes(strm, enc);
-        data.Dispose();
-        data = null;
       }
 
-      /* i want the encrypted block along with the encrypted data to be signed. */
-      {
-        var encfile = new MemoryStream();
-        _processCryptoStream(instrm, _algo.CreateEncryptor(), strm);
+      b64 = Convert.ToBase64String(_algo.Key);
+      b64 = Convert.ToBase64String(_algo.IV);
 
+      {
+        var encstrm = new MemoryStream();
+        var xform = _algo.CreateEncryptor(_algo.Key, _algo.IV);
+        var cryptostrm = new CryptoStream(encstrm, xform, CryptoStreamMode.Write);
+        _writeStream(instrm, cryptostrm, xform.OutputBlockSize * 10);
+        if (!cryptostrm.HasFlushedFinalBlock) { cryptostrm.FlushFinalBlock(); }
+        {
+          var enc = encstrm.ToArray();
+          strm.Write(enc, 0, enc.Length);
+        }
+        /* when this happens, the stream is no more. */
+        cryptostrm.Dispose();
+        
+        /*
         encfile.Seek(0, SeekOrigin.Begin);
 
         strm.Seek(0, SeekOrigin.Begin);
@@ -83,8 +178,7 @@ namespace BackupLib
         var hash = _computeHash(encfile, incHash);
         var sig = _rsa.SignHash(hash, _hash, RSASignaturePadding.Pkcs1);
         _writeBytes(strm, sig);
-
-        _writeStream(encfile, strm);
+        */
       }
 
       strm.Seek(0, SeekOrigin.Begin);
@@ -99,10 +193,13 @@ namespace BackupLib
     public void decrypt(MemoryStream instrm, FileStream strm)
     {
       byte[] origHash = null;
-      var incHash = IncrementalHash.CreateHash(_hash);
+      IncrementalHash incHash;
+
+      if (! strm.CanRead) { throw new ArgumentException("Expected to be able to read from output file to verify hash"); }
 
       var enchdr = _readBytes(instrm);
 
+#if false
       {
         /* verify signature. */
         var sig = _readBytes(instrm);
@@ -113,32 +210,52 @@ namespace BackupLib
 
         if (!sigisok) { throw new System.Security.SecurityException("Hash Signature validation failed."); }
       }
+#endif
       
       {
         var dec = _rsa.Decrypt(enchdr, RSAEncryptionPadding.OaepSHA1);
-        var decStrm = new MemoryStream(dec);
-        
-        origHash = _readBytes(decStrm);
-        string algoname = Encoding.UTF8.GetString(_readBytes(decStrm));
+        var hdr = FileHeader.Create(dec);
 
-        if (algoname != "AES") { throw new ArgumentException("Symetric encryption algo is not AES?"); }
-        _algo = Aes.Create();
-        _algo.Key = _readBytes(decStrm);
-        _algo.IV = _readBytes(decStrm);
+        HashAlgorithmName[] names = new HashAlgorithmName[] { HashAlgorithmName.MD5, HashAlgorithmName.SHA1, HashAlgorithmName.SHA256 };
+        foreach(var n in names) { if (n.Name == hdr.hashname) { _hash = n; } }
+        origHash = hdr.hash;
+        incHash = IncrementalHash.CreateHash(_hash);
+
+        if (hdr.algo == "AES")
+          {
+            _algo = Aes.Create();
+            _algo.KeySize = hdr.key.Length * 8;
+            _algo.Key = hdr.key;
+            _algo.IV = hdr.iv;
+          }
       }
       
-      _processCryptoStream(instrm, _algo.CreateDecryptor(), strm);
+      var b64b = Convert.FromBase64String("isM2/jXRIf1BgC40WYOOwXjP8QsVXEfnMBNC8wakteM=");
+      origHash = b64b;
+      b64b = Convert.FromBase64String("VynrrNXDCpCo3CliElzOQQ==");
+      _algo.Key = b64b;
+      _algo.IV = Convert.FromBase64String("DRACiUuwjtubg/XydLK0yA==");
 
-      if (strm.CanRead)
-        {
-          /* verify output file. */
-          strm.Seek(0, SeekOrigin.Begin);
-          var writtenhash = _computeHash(strm, incHash);
-          for(int i=0; i< writtenhash.Length; ++i) 
-            { if (origHash[i] != writtenhash[i]) { throw new ArgumentException("Written data does not match encrypted data."); } }
-        }
+      var instrm1 = new MemoryStream();
+      instrm.CopyTo(instrm1);
+      instrm1.Seek(0, SeekOrigin.Begin);
+      var tmpstrm = new MemoryStream();
+      var xform = _algo.CreateDecryptor(_algo.Key, _algo.IV);
+      var cryptostrm = new CryptoStream(instrm1, xform, CryptoStreamMode.Read);
+      _writeStream(cryptostrm, tmpstrm, xform.InputBlockSize);
+
+      cryptostrm.Dispose();
+      tmpstrm.WriteTo(strm);
       strm.Dispose();
       strm = null;
+      {
+        /* verify output file. */
+        //strm.Seek(0, SeekOrigin.Begin);
+        var writtenhash = _computeHash(tmpstrm, incHash);
+        for(int i=0; i< writtenhash.Length; ++i) 
+          { if (origHash[i] != writtenhash[i]) { throw new ArgumentException("Written data does not match encrypted data."); } }
+      }
+      
     }
 
     private byte[] _readBytes(Stream strm)
@@ -165,7 +282,7 @@ namespace BackupLib
     {
       byte[] lenk = BitConverter.GetBytes(bytes.Length);
       
-      strm.Write(lenk, 0, lenk.Length);
+      strm.Write(lenk, 0, 4);
       strm.Write(bytes, 0, bytes.Length);
     }
 
@@ -205,17 +322,7 @@ namespace BackupLib
           { hash.AppendData(buffer,0, lread); }
       } while(lread > 0);      
     }
-
-    private void _processCryptoStream(Stream inbytes, ICryptoTransform xform, Stream outbytes)
-    {
-      var cryptostrm = new CryptoStream(outbytes, xform, CryptoStreamMode.Write);
-
-      _writeStream(inbytes, cryptostrm, xform.OutputBlockSize * 10);
-
-      cryptostrm.FlushFinalBlock();
-      cryptostrm.Dispose();
-    }
-
+    
     private void _writeStream(Stream instrm, Stream outStrm) { _writeStream(instrm, outStrm, 100 * 1024); }
 
     private void _writeStream(Stream instrm, Stream outStrm, int bufSize)

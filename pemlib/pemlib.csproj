@@ -1,0 +1,185 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{4D938918-1AF0-4130-8DD3-1FDDF8096A2C}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>pemlib</RootNamespace>
+    <AssemblyName>pemlib</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Security.Cryptography.Algorithms, Version=4.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Security.Cryptography.Algorithms.4.3.0\lib\net461\System.Security.Cryptography.Algorithms.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.Primitives, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Security.Cryptography.Primitives.4.3.0\lib\net46\System.Security.Cryptography.Primitives.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="asn\asn1encodable.cs" />
+    <Compile Include="asn\asn1encodablevector.cs" />
+    <Compile Include="asn\asn1exception.cs" />
+    <Compile Include="asn\Asn1InputStream.cs" />
+    <Compile Include="asn\asn1null.cs" />
+    <Compile Include="asn\Asn1OctetString.cs" />
+    <Compile Include="asn\Asn1OutputStream.cs" />
+    <Compile Include="asn\asn1parsingexception.cs" />
+    <Compile Include="asn\Asn1sequence.cs" />
+    <Compile Include="asn\asn1set.cs" />
+    <Compile Include="asn\asn1streamparser.cs" />
+    <Compile Include="asn\asn1taggedobject.cs" />
+    <Compile Include="asn\AsnObject.cs" />
+    <Compile Include="asn\bc\bcobjectidentifiers.cs" />
+    <Compile Include="asn\berapplicationspecificparser.cs" />
+    <Compile Include="asn\BerOctetString.cs" />
+    <Compile Include="asn\beroctetstringparser.cs" />
+    <Compile Include="asn\bersequence.cs" />
+    <Compile Include="asn\berset.cs" />
+    <Compile Include="asn\bersetparser.cs" />
+    <Compile Include="asn\bertaggedobject.cs" />
+    <Compile Include="asn\bertaggedobjectparser.cs" />
+    <Compile Include="asn\constructedoctetstream.cs" />
+    <Compile Include="asn\cryptopro\cryptoproobjectidentifiers.cs" />
+    <Compile Include="asn\cryptopro\gost3410namedparameters.cs" />
+    <Compile Include="asn\cryptopro\gost3410paramsetparameters.cs" />
+    <Compile Include="asn\cryptopro\gost3410publickeyalgparameters.cs" />
+    <Compile Include="asn\definitelengthinputstream.cs" />
+    <Compile Include="asn\derapplicationspecific.cs" />
+    <Compile Include="asn\derbitstring.cs" />
+    <Compile Include="asn\derboolean.cs" />
+    <Compile Include="asn\derbpmstring.cs" />
+    <Compile Include="asn\derenumerated.cs" />
+    <Compile Include="asn\derexternal.cs" />
+    <Compile Include="asn\derexternalparser.cs" />
+    <Compile Include="asn\dergeneralizedtime.cs" />
+    <Compile Include="asn\dergeneralstring.cs" />
+    <Compile Include="asn\dergraphicstring.cs" />
+    <Compile Include="asn\deria5string.cs" />
+    <Compile Include="asn\derinteger.cs" />
+    <Compile Include="asn\dernull.cs" />
+    <Compile Include="asn\dernumericstring.cs" />
+    <Compile Include="asn\derobjectidentifier.cs" />
+    <Compile Include="asn\DerOutputStream.cs" />
+    <Compile Include="asn\derprintablestring.cs" />
+    <Compile Include="asn\DerSequence.cs" />
+    <Compile Include="asn\DerSet.cs" />
+    <Compile Include="asn\dert61string.cs" />
+    <Compile Include="asn\dertaggedobject.cs" />
+    <Compile Include="asn\deruniversalstring.cs" />
+    <Compile Include="asn\derutctime.cs" />
+    <Compile Include="asn\derutf8string.cs" />
+    <Compile Include="asn\dervideotexstring.cs" />
+    <Compile Include="asn\dervisiblestring.cs" />
+    <Compile Include="asn\iasn1applicationspecificparser.cs" />
+    <Compile Include="asn\LimitedInputStream.cs" />
+    <Compile Include="asn\nist\nistobjectidentifier.cs" />
+    <Compile Include="asn\oidtokenizer.cs" />
+    <Compile Include="asn\oiw\elgamalparameter.cs" />
+    <Compile Include="asn\oiw\oiwobjectidentifiers.cs" />
+    <Compile Include="asn\pkcs\dhparameter.cs" />
+    <Compile Include="asn\pkcs\encryptedprivatekeyinfo.cs" />
+    <Compile Include="asn\pkcs\pbeparameter.cs" />
+    <Compile Include="asn\pkcs\pbkdf2params.cs" />
+    <Compile Include="asn\pkcs\pkcs12pbeparams.cs" />
+    <Compile Include="asn\pkcs\pkcsobjectidentifier.cs" />
+    <Compile Include="asn\pkcs\privatekeyinfo.cs" />
+    <Compile Include="asn\pkcs\rsaprivatekeystructure.cs" />
+    <Compile Include="asn\teletrust\teletrust.cs" />
+    <Compile Include="asn\x509\Algorithmidentifier.cs" />
+    <Compile Include="asn\x509\dsaparameter.cs" />
+    <Compile Include="asn\x509\rsapublickeystructure.cs" />
+    <Compile Include="asn\x509\subjectpublickeyinfo.cs" />
+    <Compile Include="asn\x509\x509objectidentifier.cs" />
+    <Compile Include="asn\x9\dhdomainparameters.cs" />
+    <Compile Include="asn\x9\dhpublickey.cs" />
+    <Compile Include="asn\x9\dhvalidationparms.cs" />
+    <Compile Include="asn\x9\x9objectidentifiers.cs" />
+    <Compile Include="CryptoAsymmetricKeyPair.cs" />
+    <Compile Include="CryptoAsymmetricKeyParameter.cs" />
+    <Compile Include="CryptoIBufferedCipher.cs" />
+    <Compile Include="CryptoIDigest.cs" />
+    <Compile Include="cryptoparametersWithIV.cs" />
+    <Compile Include="CryptoPrngCryptoApiRandomGenerator.cs" />
+    <Compile Include="CryptoPrngDigestRandomGenerator.cs" />
+    <Compile Include="CryptoUtilsPack.cs" />
+    <Compile Include="crypto\digests\Sha1Digest.cs" />
+    <Compile Include="crypto\parameters\desparameters.cs" />
+    <Compile Include="crypto\parameters\dhkeyparameters.cs" />
+    <Compile Include="crypto\parameters\dhparameters.cs" />
+    <Compile Include="crypto\parameters\dhpublickeyparameters.cs" />
+    <Compile Include="crypto\parameters\dhvalidationparameters.cs" />
+    <Compile Include="crypto\parameters\dsakeyparameters.cs" />
+    <Compile Include="crypto\parameters\dsaparameters.cs" />
+    <Compile Include="crypto\parameters\dsaprivatekeyparamters.cs" />
+    <Compile Include="crypto\parameters\dsapublickeyparameters.cs" />
+    <Compile Include="crypto\parameters\dsavalidationparameters.cs" />
+    <Compile Include="crypto\parameters\keyparameter.cs" />
+    <Compile Include="crypto\parameters\rsakeyparameters.cs" />
+    <Compile Include="crypto\parameters\rsaprivatecrtkeyparameters.cs" />
+    <Compile Include="IOPemObject.cs" />
+    <Compile Include="IOPemReader.cs" />
+    <Compile Include="MathBigInteger.cs" />
+    <Compile Include="PemException.cs" />
+    <Compile Include="PemReader.cs" />
+    <Compile Include="pkcs\privatekeyinfofactory.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="securityPublicKeyFactory.cs" />
+    <Compile Include="security\privatekeyfactory.cs" />
+    <Compile Include="security\securityutilityexception.cs" />
+    <Compile Include="utilArrays.cs" />
+    <Compile Include="utilencodershex.cs" />
+    <Compile Include="UtilPlatform.cs" />
+    <Compile Include="utilsBaseInputStream.cs" />
+    <Compile Include="UtilsCollectionUtilities.cs" />
+    <Compile Include="utilsioFilterStream.cs" />
+    <Compile Include="UtilsTimes.cs" />
+    <Compile Include="util\io\streams.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="crypto\engines\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
