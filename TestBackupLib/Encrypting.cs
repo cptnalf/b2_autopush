@@ -165,10 +165,15 @@ namespace TestBackupLib
     public void TestAESEnc()
     {
       var aes = Aes.Create();
-      aes.Key = Convert.FromBase64String(_AESKEY);
-      aes.IV = Convert.FromBase64String(_AESIV);
 
-      aes.KeySize = aes.Key.Length * 8;
+      var keybytes = Convert.FromBase64String(_AESKEY);
+
+      aes.Mode = CipherMode.CBC;
+      aes.Padding = PaddingMode.PKCS7;
+      aes.KeySize = keybytes.Length * 8;
+
+      aes.Key = keybytes;
+      aes.IV = Convert.FromBase64String(_AESIV);
 
       var srcBytes = Encoding.UTF8.GetBytes(_PUBKEY);
       var instrm = new MemoryStream(srcBytes);
@@ -183,36 +188,11 @@ namespace TestBackupLib
       cs.Dispose();
       cs = null;
 
-      var newarr = Convert.ToBase64String(encbytes);
+      Assert.IsNotNull(encbytes);
+      Assert.IsTrue(encbytes.Length > 0);
 
-      aes = Aes.Create();
-      {
-        aes.KeySize = 128;
-        aes.GenerateIV();
-        aes.GenerateKey();
-        xform = aes.CreateEncryptor();
-        deststrm = new MemoryStream();
-        cs = new CryptoStream(deststrm, xform, CryptoStreamMode.Write);
-        cs.Write(aes.Key, 0, aes.Key.Length);
-        cs.FlushFinalBlock();
-        cs.Flush();
-        cs.Dispose();
-        cs = null;
-      }
-      aes.Key = Convert.FromBase64String(_AESKEY);
-      aes.IV = Convert.FromBase64String(_AESIV);
-      /*
-      aes.Mode = CipherMode.CBC;
-      aes.Padding = PaddingMode.Zeros;
-      */
-      xform = aes.CreateDecryptor();
-      instrm = new MemoryStream(encbytes);
-      deststrm = new MemoryStream();
-      cs = new CryptoStream(instrm, xform, CryptoStreamMode.Read);
-      cs.CopyTo(deststrm);
-      cs.Dispose();
-      cs = null;
-      var orig = Encoding.UTF8.GetString(deststrm.ToArray());
+      var newarr = Convert.ToBase64String(encbytes);
+      Assert.AreEqual(_AESENC, newarr);
     }
 
     [TestMethod]
@@ -220,16 +200,27 @@ namespace TestBackupLib
     {
       var instrm = new MemoryStream(Convert.FromBase64String(_AESENC));
       var aes = Aes.Create();
-      aes.Key = Convert.FromBase64String(_AESKEY);
+      
+      aes.Mode = CipherMode.CBC;
+      aes.Padding = PaddingMode.PKCS7;
+      {
+        var keybytes = Convert.FromBase64String(_AESKEY);
+        aes.KeySize = keybytes.Length * 8;
+        aes.Key = keybytes;
+      }
       aes.IV = Convert.FromBase64String(_AESIV);
-      aes.KeySize = aes.Key.Length * 8;
 
-      var deststrm = new MemoryStream(Encoding.UTF8.GetByteCount(_PUBKEY));
+      var deststrm = new MemoryStream();
       var xform = aes.CreateDecryptor();
       var cs = new CryptoStream(instrm, xform, CryptoStreamMode.Read);
       cs.CopyTo(deststrm);
       cs.Dispose();
       cs = null;
+
+      Assert.IsTrue(deststrm.Length > 0);
+
+      var str = Encoding.UTF8.GetString(deststrm.ToArray());
+      Assert.AreEqual(_PUBKEY, str);
     }
 
     private void _loadStream(Stream strm, string str)
@@ -242,7 +233,7 @@ namespace TestBackupLib
 
     const string _AESKEY = "pTapq8ksL5MufY/9m7PEaA==";
     const string _AESIV = "+jfy5J4gt9LGjY38JKkJGA==";
-    const string _AESENC = "vx9dH5WmSZPDMfSDaUXtRcpkzPGM8A9LUjCt/wz/2SGb5gRDStk3IPXsRctxuktrzWFp3d/QwDkJyy+djtXsE5lX1bhENaYSvE/dTCWZLzqpmPHu82vn1fg5LGjciUAiIVrKyr+jRZ/b1H7wkcNQwMqjP8Fafzo9uhZZlZhpDC9H8xr7DpFUZU/R+tbrKJeQH35uHAt2ZK2kBpSDtnhZSrP9s+hsbhjqQ+bN3bjvZpLNvGMv43P7yRuJ2uQoZvd1vsuV+N2FlTKMbt8BaNTooI4Vl5XJZM7srpcFFxs/D+mwip+4YzJKQ4vjAywzQ6d6i5AkVfhT/l16ELYtZBs+JradiQfCLwNSmrrFEZSRhBnfJfsq7dR2GObLDsc8lP1z9hKK3lwDWiFCd3xYKi+ZOzKWbPCdEkLWTPSTaPhifJDsV3VW63+SlxdguZiaGuAL7cdvHtjd/c1Nfbam0owzsKyO1lnFVrRuPU60Wsh3K8ZVhybsUBTsLE/uLHk2cyHjmhljh/wpQhPk/9UDm6jtWXBKJ2QePAL8tXCF9ZqMfujvlz6iTsX/d7IyL8ifibEDQbs9vTX/fEFZQDkGShjd00aI8Cmo2eFLT2ctsoa/Rhw=";
+    const string _AESENC = "i//+pi/BdRBqE8ME0ombHirpLqfVx9VoRidGdjp6Hqv9vgZTpw10ynvMqTj4zM6l9iHVim3kg+IKYxwTG3uLSDK5fHTZDufi79FkSjdUZhk/vRnHvLnnDX0jtp/v3geAsRHRBbafrQwyb+VDay4ceuO6si9FlBt79GbWtni/YjHtUwsy9BUQFUIqsU7Le6yxv++T3MN5dlBxefsGoAjSxtBOKvbwBIjLJMcRfIniMLRSrY26vzIbecLnJRWy/qMBdRuzdXog5y0LDmUhvN/hx2AKOSlITfrBZ3bbIP87gVooLnElE0FFlXReTACC9teqBVGexkqewCFyOYA8bGLKHpvwwEHIaZ21p6bTOrU+74TDFZSDFnCTS7xyFH5chLc8tJI4GLI/HsgVofIOIYv1Mdsqua+51ai8syutVUFasQ9WJjJRkAX/YfWjdoCMFT2fWLLUgwQleMFWoIcRXQwuLgbHucccSE/CGpqNDEpx+RHTuPb07KASYJsDOGdFKEfdpfOwdU675QeQxn1FuMVms072sYsDMWo+0Q5g7M19RiWojXD+vdVrL4jbKDhxOPxAEKm4NkD4lGxSjlX+BgHf1vo7SOwl1upZo3fAiZ4x3Lg=";
     
     const string _STRING2ENC = "blargity blarg";
     /* base 64 rsa encrypted string. */

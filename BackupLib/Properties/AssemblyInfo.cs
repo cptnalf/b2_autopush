@@ -34,3 +34,8 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
+
+#if DEBUG
+/* unit testing . */
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TestBackupLib", AllInternalsVisible =true)]
+#endif

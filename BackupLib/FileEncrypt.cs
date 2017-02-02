@@ -83,7 +83,7 @@ namespace BackupLib
 
         len = BitConverter.GetBytes(iv.Length);
         strm.Write(len, 0, 4);
-        strm.Write(key, 0, iv.Length);
+        strm.Write(iv, 0, iv.Length);
 
         return strm.ToArray();
       }
@@ -122,12 +122,16 @@ namespace BackupLib
       var incHash = IncrementalHash.CreateHash(_hash);
 
       _algo = Aes.Create();
+      
+      _algo.Mode = CipherMode.CBC;
+      _algo.Padding = PaddingMode.PKCS7;
       _algo.KeySize = 128;
       {
         /* setup the algorythm. */
         byte[] arr = new byte[_algo.KeySize / 8];
 
         _rng.GetBytes(arr);
+
         _algo.Key = arr;
         arr = new byte[_algo.BlockSize / 8];
         _rng.GetBytes(arr);
@@ -153,12 +157,9 @@ namespace BackupLib
         _writeBytes(strm, enc);
       }
 
-      b64 = Convert.ToBase64String(_algo.Key);
-      b64 = Convert.ToBase64String(_algo.IV);
-
       {
         var encstrm = new MemoryStream();
-        var xform = _algo.CreateEncryptor(_algo.Key, _algo.IV);
+        var xform = _algo.CreateEncryptor();
         var cryptostrm = new CryptoStream(encstrm, xform, CryptoStreamMode.Write);
         _writeStream(instrm, cryptostrm, xform.OutputBlockSize * 10);
         if (!cryptostrm.HasFlushedFinalBlock) { cryptostrm.FlushFinalBlock(); }
@@ -168,17 +169,6 @@ namespace BackupLib
         }
         /* when this happens, the stream is no more. */
         cryptostrm.Dispose();
-        
-        /*
-        encfile.Seek(0, SeekOrigin.Begin);
-
-        strm.Seek(0, SeekOrigin.Begin);
-        _writeBytesToHash(strm, incHash);
-
-        var hash = _computeHash(encfile, incHash);
-        var sig = _rsa.SignHash(hash, _hash, RSASignaturePadding.Pkcs1);
-        _writeBytes(strm, sig);
-        */
       }
 
       strm.Seek(0, SeekOrigin.Begin);
@@ -224,38 +214,27 @@ namespace BackupLib
         if (hdr.algo == "AES")
           {
             _algo = Aes.Create();
+            _algo.Mode = CipherMode.CBC;
+            _algo.Padding = PaddingMode.PKCS7;
+
             _algo.KeySize = hdr.key.Length * 8;
+
             _algo.Key = hdr.key;
             _algo.IV = hdr.iv;
           }
       }
       
-      var b64b = Convert.FromBase64String("isM2/jXRIf1BgC40WYOOwXjP8QsVXEfnMBNC8wakteM=");
-      origHash = b64b;
-      b64b = Convert.FromBase64String("VynrrNXDCpCo3CliElzOQQ==");
-      _algo.Key = b64b;
-      _algo.IV = Convert.FromBase64String("DRACiUuwjtubg/XydLK0yA==");
-
-      var instrm1 = new MemoryStream();
-      instrm.CopyTo(instrm1);
-      instrm1.Seek(0, SeekOrigin.Begin);
-      var tmpstrm = new MemoryStream();
-      var xform = _algo.CreateDecryptor(_algo.Key, _algo.IV);
-      var cryptostrm = new CryptoStream(instrm1, xform, CryptoStreamMode.Read);
-      _writeStream(cryptostrm, tmpstrm, xform.InputBlockSize);
-
+      var xform = _algo.CreateDecryptor();
+      var cryptostrm = new CryptoStream(instrm, xform, CryptoStreamMode.Read);
+      cryptostrm.CopyTo(strm);
       cryptostrm.Dispose();
-      tmpstrm.WriteTo(strm);
-      strm.Dispose();
-      strm = null;
       {
         /* verify output file. */
-        //strm.Seek(0, SeekOrigin.Begin);
-        var writtenhash = _computeHash(tmpstrm, incHash);
+        strm.Seek(0, SeekOrigin.Begin);
+        var writtenhash = _computeHash(strm, incHash);
         for(int i=0; i< writtenhash.Length; ++i) 
           { if (origHash[i] != writtenhash[i]) { throw new ArgumentException("Written data does not match encrypted data."); } }
       }
-      
     }
 
     private byte[] _readBytes(Stream strm)
