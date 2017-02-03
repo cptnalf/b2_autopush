@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 
 namespace BackupLib
 {
+  using BUCommon;
+
   public enum DiffType
   {
     unknown
