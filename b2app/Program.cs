@@ -70,7 +70,23 @@ namespace b2app
       var bkt = blst.FirstOrDefault();
       var flst = x.Files.GetList(bkt.BucketId);
 #endif
-      CommB2.Connection conn = CommB2.Connection.Generate("", "");
+      string userid;
+      string appkey;
+      {
+        var keyf = new System.IO.FileStream("b2.key", System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite);
+        var strm = new System.IO.StreamReader(keyf);
+        var contents = string.Empty;
+        while(!strm.EndOfStream) 
+          { var str = strm.ReadLine(); if (!string.IsNullOrWhiteSpace(str) && str[0] != '#') { contents = str; } }
+
+        strm.Close();
+        keyf = null;
+        contents = contents.Trim();
+        var parts = contents.Split(':');
+        userid = parts[0].Trim();
+        appkey = parts[1].Trim();
+      }
+      CommB2.Connection conn = CommB2.Connection.Generate(userid, appkey);
 
       /* list dir.
        * put files into various parts.
