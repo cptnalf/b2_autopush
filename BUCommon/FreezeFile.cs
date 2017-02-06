@@ -49,8 +49,11 @@ namespace BUCommon
     /// <summary>hash for the non-encrypted contents</summary>
     public Hash localHash {get;set; }
 
+    public DateTime modified {get;set; }
     /// <summary>when this file was uploaded to the provider</summary>
     public DateTime uploaded {get;set; }
+
+    public string fileID {get;set; }
     
     public FreezeFile() { }
   }

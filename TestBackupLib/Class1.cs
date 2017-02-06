@@ -7,6 +7,8 @@ namespace TestBackupLib
 {
   using Microsoft.VisualStudio.TestTools.UnitTesting;
   using System.IO;
+  using Regex = System.Text.RegularExpressions.Regex;
+  using FreezeFile = BUCommon.FreezeFile;
 
   [TestClass]
   public class Class1
@@ -20,11 +22,19 @@ namespace TestBackupLib
     [TestMethod]
     public void TestLocalLister()
     {
+      var FileRE = new Regex("^c:[\\\\]");
+
       var ll = new BackupLib.LocalLister();
       var fl = ll.getList("c:\\tmp");
 
       Assert.IsNotNull(fl);
       Assert.IsTrue(fl.Count > 0);
+      foreach(var f in fl)
+        {
+          var m = FileRE.Match(f.path);
+          Assert.IsFalse(m != null && m.Success, "Whole Path!");
+        }
+      
     }
 
     [TestMethod]
@@ -45,8 +55,8 @@ namespace TestBackupLib
       var ll = new BackupLib.LocalLister();
       var fl = ll.getList("c:\\tmp");
       
-      var fl2 = new List<BackupLib.FreezeFile>(fl);
-      fl2.Add(new BackupLib.FreezeFile { path="blarg/foo.jpg" });
+      var fl2 = new List<FreezeFile>(fl);
+      fl2.Add(new FreezeFile { path="blarg/foo.jpg" });
 
       var dd = new BackupLib.DirDiff();
       var cmpres = dd.compare(fl, fl2);

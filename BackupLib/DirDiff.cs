@@ -47,7 +47,7 @@ namespace BackupLib
       var updates =
         from lf in local
         join pf in provider on lf.path equals pf.path
-        where lf.uploaded.Date != pf.uploaded.Date
+        where lf.modified.Date > pf.uploaded.Date
         select lf;
 
       foreach(var c in updates) { files.Add(new FileDiff { file=c, type=DiffType.updated }); }

@@ -28,6 +28,8 @@ namespace BackupLib
     /// <param name="files">the resulting list of files</param>
     private void _enum(string dir, string root, ref List<FreezeFile> files)
     {
+      const string pastePath = "{0}/{1}";
+
       if (string.IsNullOrWhiteSpace(dir)) { return; }
       if (!Directory.Exists(dir)) { return; }
 
@@ -36,18 +38,18 @@ namespace BackupLib
         {
           /* hash them? */
           string newpath = f.Substring(dir.Length + 1);
-          if (!string.IsNullOrWhiteSpace(root)) { newpath = root + "/" + newpath; }
+          if (!string.IsNullOrWhiteSpace(root)) { newpath = string.Format(pastePath, root, newpath); }
 
           DateTime updated = File.GetLastWriteTimeUtc(f);
 
-          files.Add(new FreezeFile { path = newpath, uploaded=updated });
+          files.Add(new FreezeFile { path = newpath, modified=updated });
         }
 
       var dirs = Directory.EnumerateDirectories(dir);
       foreach(var d in dirs) 
         {
           string newroot = d.Substring(dir.Length + 1);
-          if (!string.IsNullOrWhiteSpace(root)) { newroot = root + "/" + newroot; }
+          if (!string.IsNullOrWhiteSpace(root)) { newroot = string.Format(pastePath, root, newroot); }
           _enum(d, newroot, ref files);
         }
     }

@@ -51,6 +51,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="CacheTest.cs" />
     <Compile Include="Class1.cs" />
     <Compile Include="Encrypting.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -59,6 +60,10 @@
     <ProjectReference Include="..\BackupLib\BackupLib.csproj">
       <Project>{2f4abbb6-2580-4475-871c-4585f5d32c07}</Project>
       <Name>BackupLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BUCommon\BUCommon.csproj">
+      <Project>{36731f63-9ade-4908-a126-e41963506dc2}</Project>
+      <Name>BUCommon</Name>
     </ProjectReference>
     <ProjectReference Include="..\pemlib\pemlib.csproj">
       <Project>{4d938918-1af0-4130-8dd3-1fddf8096a2c}</Project>
