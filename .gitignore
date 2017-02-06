@@ -241,3 +241,5 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
+
+b2.key
