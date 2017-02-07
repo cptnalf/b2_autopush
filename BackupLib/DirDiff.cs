@@ -25,6 +25,9 @@ namespace BackupLib
   /// <summary>
   /// take 2 directory listings and produce a list of files that are different.
   /// </summary>
+  /// <remarks>
+  /// this compares both the date and the time of the changes.
+  /// </remarks>
   public class DirDiff
   {
     public IReadOnlyList<FileDiff> compare(IReadOnlyList<FreezeFile> local, IReadOnlyList<FreezeFile> provider)
@@ -47,7 +50,7 @@ namespace BackupLib
       var updates =
         from lf in local
         join pf in provider on lf.path equals pf.path
-        where lf.modified.Date > pf.uploaded.Date
+        where lf.modified > pf.uploaded
         select lf;
 
       foreach(var c in updates) { files.Add(new FileDiff { file=c, type=DiffType.updated }); }
