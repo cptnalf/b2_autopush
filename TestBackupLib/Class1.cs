@@ -44,7 +44,22 @@ namespace TestBackupLib
       var fl = ll.getList("c:\\tmp");
       
       var dd = new BackupLib.DirDiff();
-      var cmpres = dd.compare(fl, fl);
+
+      /* so, the 2nd list is expected to come from the uploaded set
+       * and have an uploaded date (which won't necessarily be the modified date)
+       */
+      var fl1 = new List<FreezeFile>();
+      foreach(var ff in fl)
+        {
+          fl1.Add(new FreezeFile 
+            {
+             fileID=ff.path
+             ,path = ff.path
+             ,uploaded = ff.modified
+            });
+        }
+
+      var cmpres = dd.compare(fl, fl1);
       Assert.IsNotNull(cmpres);
       Assert.IsTrue(cmpres.Count == 0);
     }
