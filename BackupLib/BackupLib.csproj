@@ -49,6 +49,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AccountBuilder.cs" />
     <Compile Include="DirDiff.cs" />
     <Compile Include="FileEncrypt.cs" />
     <Compile Include="FileInfoLister.cs" />
@@ -65,6 +66,10 @@
     <ProjectReference Include="..\BUCommon\BUCommon.csproj">
       <Project>{36731f63-9ade-4908-a126-e41963506dc2}</Project>
       <Name>BUCommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CommB2\CommB2.csproj">
+      <Project>{b9a637ab-692f-4ab1-a3d5-5230ff6ecfca}</Project>
+      <Name>CommB2</Name>
     </ProjectReference>
     <ProjectReference Include="..\pemlib\pemlib.csproj">
       <Project>{4d938918-1af0-4130-8dd3-1fddf8096a2c}</Project>

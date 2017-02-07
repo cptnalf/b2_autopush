@@ -62,10 +62,6 @@
       <Project>{36731f63-9ade-4908-a126-e41963506dc2}</Project>
       <Name>BUCommon</Name>
     </ProjectReference>
-    <ProjectReference Include="..\CommB2\CommB2.csproj">
-      <Project>{b9a637ab-692f-4ab1-a3d5-5230ff6ecfca}</Project>
-      <Name>CommB2</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

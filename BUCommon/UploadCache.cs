@@ -19,7 +19,17 @@ namespace BUCommon
     
     private List<FreezeFile> _files = new List<FreezeFile>();
     
-    public void add(FreezeFile ff) { _files.Add(ff); }
+    public void add(FreezeFile ff) 
+    {
+      var oldf = _files.Where((x) => x.path == ff.path).FirstOrDefault();
+
+      if (oldf == null) { _files.Add(ff); }
+      else
+        {
+          _files.Remove(oldf);
+          _files.Add(ff);
+        }
+    }
 
     public IReadOnlyList<FreezeFile> getdir(string folder)
     {

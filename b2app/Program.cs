@@ -70,38 +70,32 @@ namespace b2app
       var bkt = blst.FirstOrDefault();
       var flst = x.Files.GetList(bkt.BucketId);
 #endif
-      string userid;
-      string appkey;
-      {
-        var keyf = new System.IO.FileStream("b2.key", System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite);
-        var strm = new System.IO.StreamReader(keyf);
-        var contents = string.Empty;
-        while(!strm.EndOfStream) 
-          { var str = strm.ReadLine(); if (!string.IsNullOrWhiteSpace(str) && str[0] != '#') { contents = str; } }
 
-        strm.Close();
-        keyf = null;
-        contents = contents.Trim();
-        var parts = contents.Split(':');
-        userid = parts[0].Trim();
-        appkey = parts[1].Trim();
-      }
-      CommB2.Connection conn = CommB2.Connection.Generate(userid, appkey);
+      BUCommon.AccountList accts = new BUCommon.AccountList();
+      accts.load("accounts.xml");
+      var acct = accts.accounts.FirstOrDefault();
 
-      /* list dir.
-       * put files into various parts.
-       */
-      /*
-      var aes = Aes.Create();
-      var enc = aes.CreateEncryptor(aes.Key,aes.IV);
+      if (acct == null)
+        {
+          var contents = string.Empty;
+          {
+            var keyf = new System.IO.FileStream("b2.key", System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite);
+            var strm = new System.IO.StreamReader(keyf);
+            while(!strm.EndOfStream) 
+              { var str = strm.ReadLine(); if (!string.IsNullOrWhiteSpace(str) && str[0] != '#') { contents = str; } }
 
-      var rsa = RSA.Create();
-      var rsaparams = new RSAParameters();
-      rsa.ImportParameters(rsaparams);
-      */
+            strm.Close();
+            keyf = null;
+            contents = contents.Trim();
+          }
 
-      var p = new Program();
-      //p._loadKey("c:\\tmp\\id_rsa_1_pub", string.Empty);
+          acct = accts.create("b2");
+          acct.connStr = contents;
+          acct.svcName = "CommB2.Connection";
+          BackupLib.AccountBuilder.Load(acct);
+        }
+
+      
     }
   }
 }

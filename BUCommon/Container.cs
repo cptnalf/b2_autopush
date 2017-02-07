@@ -6,46 +6,7 @@ using System.Threading.Tasks;
 
 namespace BUCommon
 {
-  using System.Xml.Serialization;
-
-  public class AccountList
-  {
-    [XmlIgnore]
-    private long _maxID = 0;
-
-    public List<Account> accounts {get;set; }
-    public AccountList() { this.accounts = new List<Account>(); }
-
-    /// <summary>
-    /// create a new account
-    /// </summary>
-    /// <param name="name"></param>
-    /// <returns></returns>
-    public Account create(string name)
-    {
-      _maxID++;
-      return new Account { id=_maxID, name=name };
-    }
-
-    /// <summary>
-    /// load an account from a file.
-    /// </summary>
-    /// <param name="file"></param>
-    public void load(string file)
-    {
-      var accts = XmlUtils.ReadXml<AccountList>(file, new Type[] { typeof(Account)});
-      this.accounts = (accts.accounts != null ? accts.accounts : this.accounts);
-
-      _maxID = this.accounts.Max((x)=> x.id);
-    }
-
-    /// <summary>
-    /// save an account to a file.
-    /// </summary>
-    /// <param name="file"></param>
-    public void save(string file)
-    { XmlUtils.WriteXml(file, this, new Type[] { typeof(Account)}); }
-  }
+ using System.Xml.Serialization;
 
   /// <summary>
   /// an account.
