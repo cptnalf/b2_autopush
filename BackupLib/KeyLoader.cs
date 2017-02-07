@@ -23,6 +23,7 @@ namespace BackupLib
 
     public static RSA LoadRSAKey(StreamReader sr)
     {
+      bool isprivate = false;
       var rdr = new Org.BouncyCastle.OpenSsl.PemReader(sr);
       var o = rdr.ReadObject();
       rdr = null;
@@ -52,6 +53,7 @@ namespace BackupLib
           rsaparams.DP=rsap.DP.ToByteArrayUnsigned();
           rsaparams.D=rsap.Exponent.ToByteArrayUnsigned();
           rsaparams.Exponent=rsap.PublicExponent.ToByteArrayUnsigned();
+          isprivate = true;
         }
       
       var rsa = RSA.Create();

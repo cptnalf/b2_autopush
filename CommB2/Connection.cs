@@ -7,20 +7,24 @@ using System.Threading.Tasks;
 namespace CommB2
 {
   using B2Net;
+  using File = System.IO.File;
 
-  public class Connection
+  public class ContainerB2 : BUCommon.Container
   {
-    /// <summary>
-    /// build a connection object for connecting to B2 
-    /// </summary>
-    /// <param name="accountID"></param>
-    /// <param name="key"></param>
-    /// <returns></returns>
-    public static Connection Generate(string accountID, string key)
+    internal string type {get;set; }
+  }
+
+  public class Connection : BUCommon.IFileSvc
+  {
+    private B2Client _client;
+    private B2Net.Models.B2Options _opts;
+
+    public void setParams(string connstr)
     {
+      var parts = BUCommon.FileSvcBase.ParseConnStr(connstr);
       var opts = new B2Net.Models.B2Options();
-      opts.AccountId = accountID;
-      opts.ApplicationKey = key;
+      opts.AccountId = parts[0];
+      opts.ApplicationKey = parts[1];
 
       var conn = new Connection();
       conn._client = new B2Client(opts);
@@ -31,22 +35,28 @@ namespace CommB2
       var bkt = blst.FirstOrDefault();
       var flst = x.Files.GetList(bkt.BucketId);
       */
-
-      return conn;
     }
 
-    private B2Client _client;
-    private B2Net.Models.B2Options _opts;
-
-    private List<B2Net.Models.B2Bucket> _buckets = new List<B2Net.Models.B2Bucket>();
-    
     /// <summary>
     /// populate the list of 
     /// </summary>
-    public void getBuckets()
+    public IReadOnlyList<BUCommon.Container> getContainers()
     {
       var res = _client.Buckets.GetList().Result;
-      _buckets.AddRange(res);
+      
+      List<BUCommon.Container> buckets = new List<BUCommon.Container>();
+      foreach(var x in res)
+        {
+          var cb = new ContainerB2
+            {
+               id=x.BucketId
+               , name=x.BucketName
+               ,type=x.BucketType
+            };
+          buckets.Add(cb);
+        }
+
+      return buckets;
     }
 
     /// <summary>
@@ -59,14 +69,14 @@ namespace CommB2
     /// </summary>
     /// <param name="bucketid"></param>
     /// <returns></returns>
-    public IReadOnlyList<BUCommon.FreezeFile> getList(string bucketid)
+    public IReadOnlyList<BUCommon.FreezeFile> getFiles(BUCommon.Container cont)
     {
       List<BUCommon.FreezeFile> list = new List<BUCommon.FreezeFile>();
       B2Net.Models.B2FileList files = null;
       string startfile = null;
 
       do {
-        files = _client.Files.GetList(startfile, null, bucketid).Result;
+        files = _client.Files.GetList(startfile, null, cont.id).Result;
         foreach(var f in files.Files)
           {
             var ff = new BUCommon.FreezeFile
@@ -85,5 +95,48 @@ namespace CommB2
 
       return list;
     }
+
+    public void uploadFile(BUCommon.Container cont, BUCommon.FreezeFile file, byte[] contents)
+    { var foo = uploadFileAsync(cont, file, contents).Result; }
+
+    public async Task<string> uploadFileAsync(BUCommon.Container cont, BUCommon.FreezeFile file, byte[] contents)
+    {
+      DateTimeOffset dto = new DateTimeOffset(file.modified.ToUniversalTime());
+      var millis = dto.ToUnixTimeMilliseconds();
+      var argdic = new Dictionary<string,string>();
+      argdic.Add("src_last_modified_millis", millis.ToString());
+      var res = await _client.Files.Upload(contents, file.path, cont.id, argdic);
+
+      file.fileID = res.FileId;
+      file.storedHash = BUCommon.Hash.Create("SHA1", res.ContentSHA1);
+      file.uploaded= res.UploadTimestampDate;
+
+      return file.fileID;
+    }
+
+    public async Task<System.IO.MemoryStream> downloadFileAsync(BUCommon.FreezeFile file)
+    {
+      if (string.IsNullOrWhiteSpace(file.fileID)) { throw new ArgumentNullException("fileID"); }
+
+      var task = await _client.Files.DownloadById(file.fileID);
+      
+      file.uploaded = task.UploadTimestampDate;
+      file.storedHash = BUCommon.Hash.Create("SHA1", task.ContentSHA1);
+      file.mimeType = task.ContentType;
+      file.path = task.FileName;
+      if( task.FileInfo != null)
+        {
+          string lastmillis = null;
+          if (task.FileInfo.TryGetValue("src_last_modified_millis", out lastmillis))
+            {
+              var dto = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(lastmillis));
+              file.modified = dto.DateTime.ToLocalTime();
+            }
+        }
+
+      return new System.IO.MemoryStream(task.FileData);
+    }
+
+    public System.IO.MemoryStream downloadFile(BUCommon.FreezeFile file) { return downloadFileAsync(file).Result; }
   }
 }
