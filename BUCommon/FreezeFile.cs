@@ -56,5 +56,10 @@ namespace BUCommon
     public string fileID {get;set; }
     
     public FreezeFile() { }
+
+    public System.IO.Stream readStream(string baseDir)
+    {
+      return new System.IO.FileStream(System.IO.Path.Combine(baseDir, path), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite | System.IO.FileShare.Delete);
+    }
   }
 }

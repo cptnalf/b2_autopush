@@ -95,6 +95,7 @@ namespace b2app
           BackupLib.AccountBuilder.Load(acct);
         }
 
+      accts.save("accounts.xml");
       
     }
   }

@@ -16,6 +16,16 @@ namespace BUCommon
     public List<Account> accounts {get;set; }
     public AccountList() { this.accounts = new List<Account>(); }
 
+    public void Add(object o)
+    {
+      Account a = o as Account;
+      if (a == null && o != null)
+        { throw new ArgumentException("object must be an Account."); }
+
+      accounts.Add(a);
+      if (_maxID < a.id) { _maxID = a.id; }
+    }
+
     /// <summary>
     /// create a new account
     /// </summary>
@@ -37,9 +47,9 @@ namespace BUCommon
     public void load(string file)
     {
       var accts = XmlUtils.ReadXml<AccountList>(file, new Type[] { typeof(Account)});
-      this.accounts = (accts.accounts != null ? accts.accounts : this.accounts);
+      this.accounts = (accts == null ? this.accounts : (accts.accounts != null ? accts.accounts : this.accounts));
 
-      _maxID = this.accounts.Max((x)=> x.id);
+      _maxID = this.accounts.Any() ? this.accounts.Max((x)=> x.id) : 0;
     }
 
     /// <summary>

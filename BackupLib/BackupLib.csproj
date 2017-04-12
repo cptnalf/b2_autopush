@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="AccountBuilder.cs" />
     <Compile Include="DirDiff.cs" />
+    <Compile Include="Downloader.cs" />
     <Compile Include="FileEncrypt.cs" />
     <Compile Include="FileInfoLister.cs" />
     <Compile Include="IFileLister.cs" />
@@ -60,6 +61,7 @@
     <Compile Include="Uploader.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

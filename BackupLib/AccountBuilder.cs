@@ -28,6 +28,13 @@ namespace BackupLib
       return acctlst;
     }
 
+    public static void Save(BUCommon.AccountList accounts)
+    {
+      string file = "b2app.accounts.xml";
+      file = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), file);
+      accounts.save(file);
+    }
+
     public static void Load(BUCommon.Account account)
     {
       Func<BUCommon.IFileSvc> svc = null;

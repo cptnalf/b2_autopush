@@ -26,8 +26,7 @@ namespace CommB2
       opts.AccountId = parts[0];
       opts.ApplicationKey = parts[1];
 
-      var conn = new Connection();
-      conn._client = new B2Client(opts);
+      _client = new B2Client(opts);
 
       /*
       var blst = x.Buckets.GetList().Result;
@@ -42,6 +41,7 @@ namespace CommB2
     /// </summary>
     public IReadOnlyList<BUCommon.Container> getContainers()
     {
+      if (string.IsNullOrWhiteSpace(_opts.AuthorizationToken)) { throw new ArgumentException("Open the connection first."); }
       var res = _client.Buckets.GetList().Result;
       
       List<BUCommon.Container> buckets = new List<BUCommon.Container>();
@@ -127,7 +127,8 @@ namespace CommB2
       if( task.FileInfo != null)
         {
           string lastmillis = null;
-          if (task.FileInfo.TryGetValue("src_last_modified_millis", out lastmillis))
+          /*x-bz-info-src_last_modified_millis */
+          if (task.FileInfo.TryGetValue("x-bz-info-src_last_modified_millis", out lastmillis))
             {
               var dto = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(lastmillis));
               file.modified = dto.DateTime.ToLocalTime();

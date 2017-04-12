@@ -25,6 +25,7 @@ namespace BUCommon
 
     public static T ReadXml<T>(string filesrc, Type[] subTypes) where T : class
     {
+      if (!File.Exists(filesrc)) { return null; }
       var strm = new FileStream(filesrc, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
       var xdr  = _SerializerMake(typeof(T), subTypes);
       var ucx = xdr.Deserialize(strm) as T;
