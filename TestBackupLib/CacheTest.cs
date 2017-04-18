@@ -8,16 +8,17 @@ namespace TestBackupLib
 {
   using Microsoft.VisualStudio.TestTools.UnitTesting;
   using FreezeFile = BUCommon.FreezeFile;
-  using UploadCache = BUCommon.UploadCache;
+  using FileCache = BUCommon.FileCache;
   using BackupLib;
 
   [TestClass]
   public class CacheTest
   {
-    private UploadCache _buildCache()
+    private FileCache _buildCache()
     {
-      var uc = new UploadCache();
+      var uc = new FileCache();
 
+      var c = new BUCommon.Container { accountID=1, id="blargacct", name="blarg account", type="blarg" };
       var ff = new FreezeFile 
         { 
           fileID="blarg"
@@ -27,8 +28,9 @@ namespace TestBackupLib
           , path="blarg/blarg1.obj"
           , storedHash=BUCommon.Hash.Create("SHA0", new byte[] { 22,44, 0, 89 })
           , uploaded=new DateTime(2016,12,03)
+          ,container = c
         };
-
+      uc.add(c);
       uc.add(ff);
 
       return uc;
@@ -51,32 +53,22 @@ namespace TestBackupLib
     public void TestCacheWrite()
     {
       var uc = _buildCache();
-      uc.write("c:\\tmp\\cachexml.xml");
+      uc.save("c:\\tmp\\cachexml.xml");
     }
 
     [TestMethod]
     public void TestCacheRead()
     {
       var uc = _buildCache();
-      uc.write("c:\\tmp\\cachexml.xml");
+      uc.save("c:\\tmp\\cachexml.xml");
 
-      uc.read("c:\\tmp\\cachexml.xml");
+      uc.load("c:\\tmp\\cachexml.xml");
       var blardir = uc.getdir("blarg");
 
       Assert.IsNotNull(blardir);
       var item = blardir.FirstOrDefault();
       Assert.IsNotNull(item);
       Assert.AreEqual("blarg/blarg1.obj", item.path);
-    }
-
-    [TestMethod]
-    public void RegCache()
-    {
-      var fil = new FileInfoLister();
-      fil.init();
-
-      fil.Dispose();
-      fil = null;
     }
   }
 }

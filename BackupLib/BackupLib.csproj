@@ -50,10 +50,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AccountBuilder.cs" />
+    <Compile Include="commands\Authorize.cs" />
+    <Compile Include="commands\Containers.cs" />
+    <Compile Include="commands\CopyLocal.cs" />
+    <Compile Include="commands\CopyRemote.cs" />
+    <Compile Include="commands\DirectoryCompare.cs" />
+    <Compile Include="commands\FileList.cs" />
+    <Compile Include="commands\Sync.cs" />
+    <Compile Include="DiffProcessor.cs" />
     <Compile Include="DirDiff.cs" />
     <Compile Include="Downloader.cs" />
     <Compile Include="FileEncrypt.cs" />
-    <Compile Include="FileInfoLister.cs" />
     <Compile Include="IFileLister.cs" />
     <Compile Include="KeyLoader.cs" />
     <Compile Include="LocalLister.cs" />

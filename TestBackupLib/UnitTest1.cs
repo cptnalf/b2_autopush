@@ -37,6 +37,8 @@ namespace TestBackupLib
           BackupLib.AccountBuilder.Load(acct);
         }
       BackupLib.AccountBuilder.Save(accts);
+
+      acct.service.open();
     }
 
     [TestMethod]
@@ -49,7 +51,7 @@ namespace TestBackupLib
       Assert.AreEqual("CommB2.Connection", acct.svcName);
 
       Assert.IsNotNull(acct.service);
-      acct.service.open();
+      //acct.service.open();
 
       var conts = acct.service.getContainers();
       Assert.IsNotNull(conts);
@@ -105,7 +107,7 @@ namespace TestBackupLib
       var ffs = ll.getList("c:\\tmp\\photos");
       var ff = ffs.Where(x => x.path.Contains("DSC06562")).FirstOrDefault();
       var uploader = new BackupLib.Uploader();
-      uploader.cache = new BUCommon.UploadCache();
+      uploader.cache = new BUCommon.FileCache();
 
       uploader.concurrent = 1;
       uploader.fileService = acct.service;
@@ -123,7 +125,7 @@ namespace TestBackupLib
     [TestMethod]
     public void UploadCacheTest()
     {
-      BUCommon.UploadCache uc = new BUCommon.UploadCache();
+      BUCommon.FileCache uc = new BUCommon.FileCache();
       uc.read("C:\\tmp\\photos.cache");
 
       var files = uc.getdir("2016");
@@ -136,10 +138,10 @@ namespace TestBackupLib
     {
       var accts = BackupLib.AccountBuilder.BuildAccounts();
       var acct = accts.FirstOrDefault();
-      BUCommon.UploadCache uc = new BUCommon.UploadCache();
+      BUCommon.FileCache uc = new BUCommon.FileCache();
       uc.read("C:\\tmp\\photos.cache");
 
-      acct.service.open();
+      //acct.service.open();
 
       var files = uc.getdir("2016");
       var dl = new BackupLib.Downloader { concurrent=1, fileService=acct.service, root="c:\\tmp\\rstphotos"};

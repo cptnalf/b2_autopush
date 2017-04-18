@@ -16,10 +16,15 @@ namespace BUCommon
   /// </summary>
   public interface IFileSvc
   {
+    FileCache fileCache {get;set;}
+    
     void setParams(string connstr);
-    void open();
+    void authorize();
     IReadOnlyList<Container> getContainers();
     IReadOnlyList<FreezeFile> getFiles(Container container);
+    IReadOnlyList<FreezeFile> getVersions(Container container);
+
+    void delete(FreezeFile file);
 
     void uploadFile(Container container, FreezeFile file, byte[] contents);
     Task<string> uploadFileAsync(Container container, FreezeFile file, byte[] contents);

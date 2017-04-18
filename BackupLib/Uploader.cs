@@ -8,6 +8,7 @@ namespace BackupLib
 {
   using BUCommon;
   using FileStream = System.IO.FileStream;
+  using File = System.IO.File;
   using FileMode = System.IO.FileMode;
   using FileAccess = System.IO.FileAccess;
   using FileShare = System.IO.FileShare;
@@ -24,7 +25,6 @@ namespace BackupLib
     public Action<string,int,int> progressFX {get;set; }
     public Action<Exception,string> errorFX {get;set; }
 
-    public UploadCache cache {get;set; }
     public IFileSvc fileService {get;set; }
 
     public void run(Container cont, IReadOnlyList<FreezeFile> files, FileEncrypt fe, Action<string,int,int> progressFx)
@@ -46,17 +46,22 @@ namespace BackupLib
           string path = f.path.Replace('/', '\\');
           path = Path.Combine(root, path);
           try {
-            filestrm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite|FileShare.Delete);
+            DateTime lastMod = File.GetLastWriteTimeUtc(path);
 
-            var memstrm = fe.encrypt(filestrm);
-            var contents = memstrm.ToArray();
+            /* don't upload if we don't have to, based on cached data. */
+            if (f.uploaded > DateTime.MinValue && f.uploaded >= lastMod) {}
+            else
+              {
+                filestrm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite|FileShare.Delete);
 
-            fileService.uploadFile(cont, f, contents);
-            contents = null;
-            memstrm.Dispose();
-            memstrm = null;
-            
-            cache.add(f);
+                var memstrm = fe.encrypt(filestrm);
+                var contents = memstrm.ToArray();
+
+                fileService.uploadFile(cont, f, contents);
+                contents = null;
+                memstrm.Dispose();
+                memstrm = null;
+              }
           } 
           catch (Exception e)
             { errorFX?.Invoke(e, path); }

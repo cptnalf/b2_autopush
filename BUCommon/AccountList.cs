@@ -13,6 +13,8 @@ namespace BUCommon
     [XmlIgnore]
     private long _maxID = 0;
 
+    [XmlIgnore]
+    public FileCache filecache {get;set;}
     public List<Account> accounts {get;set; }
     public AccountList() { this.accounts = new List<Account>(); }
 
@@ -46,7 +48,7 @@ namespace BUCommon
     /// <param name="file"></param>
     public void load(string file)
     {
-      var accts = XmlUtils.ReadXml<AccountList>(file, new Type[] { typeof(Account)});
+      var accts = XmlUtils.ReadXml<AccountList>(file, new Type[] { typeof(Account), typeof(AuthStorage), typeof(KeyValuePair<string,string>)});
       this.accounts = (accts == null ? this.accounts : (accts.accounts != null ? accts.accounts : this.accounts));
 
       _maxID = this.accounts.Any() ? this.accounts.Max((x)=> x.id) : 0;
@@ -57,7 +59,7 @@ namespace BUCommon
     /// </summary>
     /// <param name="file"></param>
     public void save(string file)
-    { XmlUtils.WriteXml(file, this, new Type[] { typeof(Account)}); }
+    { XmlUtils.WriteXml(file, this, new Type[] { typeof(Account), typeof(AuthStorage), typeof(KeyValuePair<string,string>)}); }
 
     public IEnumerator<Account> GetEnumerator() { return this.accounts.GetEnumerator(); }
     System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { return this.accounts.GetEnumerator(); }

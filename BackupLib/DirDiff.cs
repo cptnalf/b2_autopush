@@ -18,7 +18,8 @@ namespace BackupLib
 
   public class FileDiff
   {
-    public FreezeFile file {get;set; }
+    public FreezeFile local {get;set; }
+    public FreezeFile remote {get;set;}
     public DiffType type {get;set; }
   }
 
@@ -38,7 +39,7 @@ namespace BackupLib
         from pf in provider 
         where local.Where((x) => string.Compare(x.path, pf.path, true) == 0).Any() == false
         select pf;
-      foreach(var d in dels) { files.Add(new FileDiff { file=d, type=DiffType.deleted }); }
+      foreach(var d in dels) { files.Add(new FileDiff { local=null, remote=d, type=DiffType.deleted }); }
 
       var creates =
         from lf in local

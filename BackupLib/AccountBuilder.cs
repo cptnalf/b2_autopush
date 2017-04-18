@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 namespace BackupLib
 {
+  using System.IO;
+
   public class AccountBuilder
   {
     private static Dictionary<string,Func<BUCommon.IFileSvc>> _SvcMapping = new Dictionary<string,Func<BUCommon.IFileSvc>>();
@@ -23,7 +25,14 @@ namespace BackupLib
       var acctlst = new BUCommon.AccountList();
       acctlst.load(file);
 
-      foreach(var a in acctlst) { Load(a); }
+      file = "b2app.filecache.xml";
+      file = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), file);
+      BUCommon.FileCache fc = new BUCommon.FileCache();
+
+      if (File.Exists(file))
+        { fc.load(file); }
+
+      foreach(var a in acctlst) { Load(acctlst, a); }
 
       return acctlst;
     }
@@ -31,16 +40,22 @@ namespace BackupLib
     public static void Save(BUCommon.AccountList accounts)
     {
       string file = "b2app.accounts.xml";
-      file = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), file);
+      file = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), file);
       accounts.save(file);
+
+      file = "b2app.filecache.xml";
+      file = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), file);
+      accounts.filecache.save(file);
+
     }
 
-    public static void Load(BUCommon.Account account)
+    public static void Load(BUCommon.AccountList accounts, BUCommon.Account account)
     {
       Func<BUCommon.IFileSvc> svc = null;
       if (_SvcMapping.TryGetValue(account.svcName, out svc))
         {
           account.service = svc();
+          account.service.fileCache = accounts.filecache;
           account.service.setParams(account.connStr);
         }
       else

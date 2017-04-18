@@ -20,6 +20,10 @@ namespace BUCommon
 
     [XmlIgnore]
     public IFileSvc service {get;set; }
+
+    public AuthStorage auth {get;set;}
+
+    public Account() { this.auth = new AuthStorage(); }
   }
 
   /// <summary>
@@ -38,7 +42,14 @@ namespace BUCommon
     /// <summary>a human-readable name for the container.</summary>
     public string name {get;set; }
 
+    /// <summary>container specific type-information</summary>
+    public string type {get;set;}
+
+    public List<FreezeFile> files {get;set;}
+
     [XmlIgnore]
     public Account account {get;set; }
+
+    public Container() { this.files = new List<FreezeFile>(); }
   }
 }

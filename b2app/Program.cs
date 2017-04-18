@@ -17,6 +17,21 @@ namespace b2app
 
     static void Main(string[] args)
     {
+      Console.WriteLine("options:");
+      Console.WriteLine("\tauthorize - connect to cloud provider and get keys to use for subsequent commands.");
+      Console.WriteLine("\tcontainers - use keys to get a current list of containers in the cloud provider.");
+      Console.WriteLine("\tls <container> - use keys to get a current list of files in the specified container.");
+      Console.WriteLine("\tlsversions <container> - use keys to get a current list of all files and version in the specified container.");
+      
+      /* commands:
+       * copy (forces push?)
+       * sync (maybe this is same as above?)
+       *  - diff between local directory structure and remote structure
+       *    push files that have changed/new/deleted up to remote.
+       * 
+       * 
+       */
+
       /*
        * process:
        * load local files from specified place
