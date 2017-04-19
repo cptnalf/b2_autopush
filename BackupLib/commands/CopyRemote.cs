@@ -9,8 +9,17 @@ namespace BackupLib.commands
   /// <summary>
   /// ignore cache and push contents of directory to remote container.
   /// </summary>
-  public class CopyRemote
+  public class CopyRemote : BUCommon.ICommand
   {
+    public string helptext => @"copyremote <account>:<container> <root> [file regex]
+        -  Copies files from the local system, starting at <root> to the
+         remote container.  It uses the optional [file regex] regular 
+         expression to filter the list of local files to upload. The files
+         in question are unconditionally uploaded, no checks are made to 
+         see if any have already been uploaded. All the files are uploaded
+         to the remote container.
+";
+    
     public BUCommon.FileCache cache {get;set;}
     public BUCommon.Account account {get;set;}
     public BUCommon.Container container {get;set;}

@@ -6,8 +6,12 @@ using System.Threading.Tasks;
 
 namespace BackupLib.commands
 {
-  public class Authorize
+  public class Authorize : BUCommon.ICommand
   {
+    public string helptext => @"authorize <account> 
+        -  authorize account using the service the account is attached to.
+";
+    
     public BUCommon.Account account {get;set;}
 
     public void run()

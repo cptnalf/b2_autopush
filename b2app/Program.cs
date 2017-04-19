@@ -9,20 +9,22 @@ namespace b2app
 {
   class Program
   {
-    private RSACryptoServiceProvider _rsa;
-    private string _encrFolder = "c:\\tmp\\enc";
-    private string _decrFolder = "c:\\tmp\\dec";
-    private string _srcFolder = "c:\\tmp\\src";
-    private CspParameters _cspp = new CspParameters(1);
-
+    static System.Text.RegularExpressions.Regex _CmdRE = new System.Text.RegularExpressions.Regex("^BackupLib.commands", System.Text.RegularExpressions.RegexOptions.Compiled);
+    
     static void Main(string[] args)
     {
       Console.WriteLine("options:");
-      Console.WriteLine("\tauthorize - connect to cloud provider and get keys to use for subsequent commands.");
-      Console.WriteLine("\tcontainers - use keys to get a current list of containers in the cloud provider.");
-      Console.WriteLine("\tls <container> - use keys to get a current list of files in the specified container.");
-      Console.WriteLine("\tlsversions <container> - use keys to get a current list of all files and version in the specified container.");
       
+      var asm = System.Reflection.Assembly.GetAssembly(typeof(BackupLib.AccountBuilder));
+      foreach(var t in asm.ExportedTypes.Where(x => x.GetInterfaces().Where(t => t == typeof(BUCommon.ICommand)).Any())
+                        .OrderBy(x => x.FullName))
+        {
+          var tc = t.GetConstructor(new Type[] {});
+          var o = tc.Invoke(new object[] {});
+          var cmd = o as BUCommon.ICommand;
+          Console.WriteLine("\t{0}", cmd.helptext);
+        }
+
       /* commands:
        * copy (forces push?)
        * sync (maybe this is same as above?)

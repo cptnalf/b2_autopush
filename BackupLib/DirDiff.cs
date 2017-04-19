@@ -46,15 +46,15 @@ namespace BackupLib
         where provider.Where((x) => string.Compare(x.path, lf.path, true) == 0).Any() == false
         select lf;
 
-      foreach(var c in creates) { files.Add(new FileDiff { file=c, type=DiffType.created }); }
+      foreach(var c in creates) { files.Add(new FileDiff { local=c, remote=null, type=DiffType.created }); }
 
       var updates =
         from lf in local
         join pf in provider on lf.path equals pf.path
         where lf.modified > pf.uploaded
-        select lf;
+        select new { lf, pf};
 
-      foreach(var c in updates) { files.Add(new FileDiff { file=c, type=DiffType.updated }); }
+      foreach(var c in updates) { files.Add(new FileDiff { local=c.lf, remote=c.pf, type=DiffType.updated }); }
 
       return files;
     }

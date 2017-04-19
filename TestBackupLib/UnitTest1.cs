@@ -34,11 +34,11 @@ namespace TestBackupLib
           acct = accts.create("b2");
           acct.connStr = contents;
           acct.svcName = "CommB2.Connection";
-          BackupLib.AccountBuilder.Load(acct);
+          BackupLib.AccountBuilder.Load(accts, acct);
         }
       BackupLib.AccountBuilder.Save(accts);
 
-      acct.service.open();
+      acct.service.authorize();
     }
 
     [TestMethod]
@@ -63,7 +63,7 @@ namespace TestBackupLib
       BUCommon.AccountList accts = BackupLib.AccountBuilder.BuildAccounts();
       var acct = accts.accounts.FirstOrDefault();
       Assert.AreEqual("CommB2.Connection", acct.svcName);
-      acct.service.open();
+      acct.service.authorize();
 
       var cont = acct.service.getContainers().FirstOrDefault();
       
@@ -95,7 +95,7 @@ namespace TestBackupLib
       BUCommon.AccountList accts = BackupLib.AccountBuilder.BuildAccounts();
       var acct = accts.accounts.FirstOrDefault();
       Assert.AreEqual("CommB2.Connection", acct.svcName);
-      acct.service.open();
+      acct.service.authorize();
 
       var cont = acct.service.getContainers().FirstOrDefault();
       
@@ -107,8 +107,8 @@ namespace TestBackupLib
       var ffs = ll.getList("c:\\tmp\\photos");
       var ff = ffs.Where(x => x.path.Contains("DSC06562")).FirstOrDefault();
       var uploader = new BackupLib.Uploader();
-      uploader.cache = new BUCommon.FileCache();
-
+      
+      /* @ todo cache? */
       uploader.concurrent = 1;
       uploader.fileService = acct.service;
       uploader.root = "c:\\tmp\\photos";
@@ -119,14 +119,13 @@ namespace TestBackupLib
 
       var fflst = new BUCommon.FreezeFile[] { ff};
       uploader.run(cont, fflst, fe, null);
-      uploader.cache.write("c:\\tmp\\photos.cache");
     }
 
     [TestMethod]
     public void UploadCacheTest()
     {
       BUCommon.FileCache uc = new BUCommon.FileCache();
-      uc.read("C:\\tmp\\photos.cache");
+      uc.load("C:\\tmp\\photos.cache");
 
       var files = uc.getdir("2016");
       Assert.IsNotNull(files);
@@ -139,7 +138,7 @@ namespace TestBackupLib
       var accts = BackupLib.AccountBuilder.BuildAccounts();
       var acct = accts.FirstOrDefault();
       BUCommon.FileCache uc = new BUCommon.FileCache();
-      uc.read("C:\\tmp\\photos.cache");
+      uc.load("C:\\tmp\\photos.cache");
 
       //acct.service.open();
 

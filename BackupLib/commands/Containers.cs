@@ -6,8 +6,12 @@ using System.Threading.Tasks;
 
 namespace BackupLib.commands
 {
-  class Containers
+  public class Containers : BUCommon.ICommand
   {
+    public string helptext => @"lsc <account>
+        - list containers on the account's service
+";
+    
     public BUCommon.FileCache cache {get;set;}
     public BUCommon.Account account {get;set;}
 
