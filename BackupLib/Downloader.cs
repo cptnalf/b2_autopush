@@ -51,7 +51,8 @@ namespace BackupLib
             System.IO.Directory.CreateDirectory(pathparts);
             filestrm = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite|FileShare.Delete);
             var memstrm = fileService.downloadFile(f);
-            fe.decrypt(memstrm, filestrm);
+            byte[] bytes = BUCommon.IOUtils.ReadStream(memstrm).Result;
+            fe.decrypt(bytes, filestrm);
             memstrm.Dispose();
             memstrm = null;
             

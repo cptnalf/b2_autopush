@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace BUCommon
 {
-  using MemoryStream = System.IO.MemoryStream;
+  using Stream = System.IO.Stream;
 
   /// <summary>
   /// this is a low-level interface.
@@ -26,10 +26,10 @@ namespace BUCommon
 
     void delete(FreezeFile file);
 
-    void uploadFile(Container container, FreezeFile file, byte[] contents);
-    Task<string> uploadFileAsync(Container container, FreezeFile file, byte[] contents);
+    void uploadFile(Container container, FreezeFile file, Stream contents);
+    Task<string> uploadFileAsync(Container container, FreezeFile file, Stream contents);
 
-    MemoryStream downloadFile(FreezeFile file);
-    Task<MemoryStream> downloadFileAsync(FreezeFile file);
+    Stream downloadFile(FreezeFile file);
+    Task<Stream> downloadFileAsync(FreezeFile file);
   }
 }

@@ -17,6 +17,12 @@ namespace BackupLib
 
   public class DiffProcessor
   {
+    internal class TLocalData
+    {
+      internal FileEncrypt fe {get;set;}
+      internal object auth {get;set;}
+    }
+    
     private List<FileDiff> _diffs = new List<FileDiff>();
 
     public int maxTasks {get;set;}
@@ -38,12 +44,7 @@ namespace BackupLib
       {
         var kt = new MemoryStream();
         var fs = new FileStream(encKey, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        byte[] buf = new byte[2048];
-        int len = 0;
-        do {
-          len = fs.Read(buf,0,buf.Length);
-          kt.Write(buf,0,len);
-        }while(len == buf.Length);
+        var len = BUCommon.IOUtils.WriteStream(fs,kt).Result;
         fs.Close();
         fs.Dispose();
         fs = null;
@@ -55,13 +56,18 @@ namespace BackupLib
 
       var tasks = Parallel.ForEach(_diffs
         ,new ParallelOptions { MaxDegreeOfParallelism=maxTasks}
-        ,x =>
+        ,() => 
         {
-          progressHandler?.Invoke(x);
           var sr = new StreamReader(new MemoryStream(keyfile, 0, keyfile.Length, false, false));
           var rsa = KeyLoader.LoadRSAKey(sr);
 
-          var fe = new FileEncrypt(rsa);
+          var fe1 = new FileEncrypt(rsa);
+          sr = null;
+          return new TLocalData { fe=fe1 };
+        }
+        ,(x,pls,tl) =>
+        {
+          progressHandler?.Invoke(x);
 
           string path = x.local.path.Replace('/', '\\');
           path = Path.Combine(root, path);
@@ -69,11 +75,8 @@ namespace BackupLib
           try {
               filestrm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite|FileShare.Delete);
 
-              var memstrm = fe.encrypt(filestrm);
-              var contents = memstrm.ToArray();
-
-              service.uploadFile(container, x.local, contents);
-              contents = null;
+              var memstrm = tl.fe.encrypt(filestrm);
+              service.uploadFile(container, x.local, memstrm);
               memstrm.Dispose();
               memstrm = null;
           } 
@@ -82,7 +85,9 @@ namespace BackupLib
               errorHandler?.Invoke(x,e);
               throw new ArgumentException("Error processing file diff item.", e);
             }
+          return tl;
         }
+        ,x => { }
         );
     }
   }

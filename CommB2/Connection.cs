@@ -216,16 +216,18 @@ b2_get_download_authorization
       return res.FileId;
     }
 
-    public void uploadFile(BUCommon.Container cont, BUCommon.FreezeFile file, byte[] contents)
+    public void uploadFile(BUCommon.Container cont, BUCommon.FreezeFile file, System.IO.Stream contents)
     { var foo = uploadFileAsync(cont, file, contents).Result; }
 
-    public async Task<string> uploadFileAsync(BUCommon.Container cont, BUCommon.FreezeFile file, byte[] contents)
+    public async Task<string> uploadFileAsync(BUCommon.Container cont, BUCommon.FreezeFile file, System.IO.Stream contents)
     {
       DateTimeOffset dto = new DateTimeOffset(file.modified.ToUniversalTime());
       var millis = dto.ToUnixTimeMilliseconds();
       var argdic = new Dictionary<string,string>();
       argdic.Add("src_last_modified_millis", millis.ToString());
-      var res = await _client.Files.Upload(contents, file.path, cont.id, argdic);
+      byte[] bytes = await BUCommon.IOUtils.ReadStream(contents);
+
+      var res = await _client.Files.Upload(bytes, file.path, cont.id, argdic);
 
       /* create another freezefile for the new bit. */
       var ff = new BUCommon.FreezeFile
@@ -244,7 +246,7 @@ b2_get_download_authorization
       return ff.fileID;
     }
 
-    public async Task<System.IO.MemoryStream> downloadFileAsync(BUCommon.FreezeFile file)
+    public async Task<System.IO.Stream> downloadFileAsync(BUCommon.FreezeFile file)
     {
       if (string.IsNullOrWhiteSpace(file.fileID)) { throw new ArgumentNullException("fileID"); }
 
@@ -268,6 +270,6 @@ b2_get_download_authorization
       return new System.IO.MemoryStream(task.FileData);
     }
 
-    public System.IO.MemoryStream downloadFile(BUCommon.FreezeFile file) { return downloadFileAsync(file).Result; }
+    public System.IO.Stream downloadFile(BUCommon.FreezeFile file) { return downloadFileAsync(file).Result; }
   }
 }
