@@ -116,7 +116,7 @@ namespace BackupLib
                   }
 
                   var strm = service.downloadFile(x.remote);
-                  filestrm = new FileStream(path, FileMode.Create, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                  filestrm = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete);
                   tl.fe.decrypt(strm, filestrm);
                   strm.Dispose();
                   strm = null;

@@ -18,20 +18,14 @@ namespace BackupLib
     public Account account {get;set;}
     public FileCache fileCache { get {return _fileCache; } set { _fileCache = value; } }
 
+    public void setParams(string connstr)
+    {
+      _root = connstr;
+    }
+
     public void authorize() { }
 
     public void delete(FreezeFile file) { File.Delete(file.fileID); }
-
-    public Stream downloadFile(FreezeFile file)
-    {
-    throw new NotImplementedException();
-    }
-
-    public async Task<Stream> downloadFileAsync(FreezeFile file)
-    {
-      var fstrm = new FileStream(file.fileID, FileMode.Open, FileAccess.Read, FileShare.ReadWrite|FileShare.Delete);
-      return await Task.Run(() => fstrm);
-    }
 
     public IReadOnlyList<Container> getContainers()
     {
@@ -60,14 +54,14 @@ namespace BackupLib
       return files;
     }
 
-    public IReadOnlyList<FreezeFile> getVersions(Container container)
-    {
-      throw new NotImplementedException();
-    }
+    public IReadOnlyList<FreezeFile> getVersions(Container container) { return getFiles(container); }
 
-    public void setParams(string connstr)
+    public Stream downloadFile(FreezeFile file) { return downloadFileAsync(file).Result; }
+
+    public async Task<Stream> downloadFileAsync(FreezeFile file)
     {
-      _root = connstr;
+      var fstrm = new FileStream(file.fileID, FileMode.Open, FileAccess.Read, FileShare.ReadWrite|FileShare.Delete);
+      return await Task.Run(() => fstrm);
     }
 
     public void uploadFile(Container container, FreezeFile file, Stream contents)
