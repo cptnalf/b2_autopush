@@ -81,7 +81,9 @@ namespace TestBackupLib
       encstrm.Seek(0, System.IO.SeekOrigin.Begin);
 
       DateTime now = DateTime.Now;
-      acct.service.uploadFile(cont, ff, encstrm);
+      var td = acct.service.threadStart();
+      acct.service.uploadFile(td, cont, ff, encstrm);
+      acct.service.threadStop(td);
       Assert.AreEqual(2017,ff.uploaded.Year);
       Assert.AreEqual(now.Month, ff.uploaded.Month);
       Assert.AreEqual(now.Day, ff.uploaded.Day);
