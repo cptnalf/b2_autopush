@@ -15,6 +15,7 @@ namespace BackupLib
     static AccountBuilder()
     {
       _SvcMapping.Add(typeof(CommB2.Connection).FullName, () => new CommB2.Connection());
+      _SvcMapping.Add(typeof(LocalService).FullName, () => new LocalService());
     }
 
     public static BUCommon.AccountList BuildAccounts()
@@ -55,6 +56,7 @@ namespace BackupLib
       if (_SvcMapping.TryGetValue(account.svcName, out svc))
         {
           account.service = svc();
+          account.service.account = account;
           account.service.fileCache = accounts.filecache;
           account.service.setParams(account.connStr);
         }

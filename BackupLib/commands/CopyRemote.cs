@@ -25,6 +25,7 @@ namespace BackupLib.commands
     public BUCommon.Container container {get;set;}
     public string pathRoot {get;set;}
     public string fileRE {get;set;}
+    public string key {get;set;}
 
     public void run()
     {
@@ -37,7 +38,12 @@ namespace BackupLib.commands
 
           localfiles = localfiles.Where(x => re.IsMatch(x.path)).ToList();
         }
-      /* need multithreaded uploader. */
+
+      var locdiffs = localfiles.Select(x => new FileDiff { local=x,remote=null,type= DiffType.created});
+      var dp = new DiffProcessor { account=account, container=container, maxTasks=10, root=pathRoot, encKey=key};
+
+      dp.add(locdiffs);
+      dp.run(RunType.upload);
     }
   }
 }

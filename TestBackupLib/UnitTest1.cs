@@ -79,46 +79,12 @@ namespace TestBackupLib
 
       var res = sha1.ComputeHash(encstrm);
       encstrm.Seek(0, System.IO.SeekOrigin.Begin);
-      byte[] filebytes = encstrm.ToArray();
 
       DateTime now = DateTime.Now;
-      acct.service.uploadFile(cont, ff, filebytes);
+      acct.service.uploadFile(cont, ff, encstrm);
       Assert.AreEqual(2017,ff.uploaded.Year);
       Assert.AreEqual(now.Month, ff.uploaded.Month);
       Assert.AreEqual(now.Day, ff.uploaded.Day);
-
-    }
-
-    [TestMethod]
-    public void B2UploaderCachedTest()
-    {
-      BUCommon.AccountList accts = BackupLib.AccountBuilder.BuildAccounts();
-      var acct = accts.accounts.FirstOrDefault();
-      Assert.AreEqual("CommB2.Connection", acct.svcName);
-      acct.service.authorize();
-
-      var cont = acct.service.getContainers().FirstOrDefault();
-      
-      var files = acct.service.getFiles(cont);
-
-
-      Assert.IsNotNull(cont);
-      var ll = new BackupLib.LocalLister();
-      var ffs = ll.getList("c:\\tmp\\photos");
-      var ff = ffs.Where(x => x.path.Contains("DSC06562")).FirstOrDefault();
-      var uploader = new BackupLib.Uploader();
-      
-      /* @ todo cache? */
-      uploader.concurrent = 1;
-      uploader.fileService = acct.service;
-      uploader.root = "c:\\tmp\\photos";
-      uploader.errorFX = (ex,str) => { Console.WriteLine("{0}:{1}", ex.ToString(), str); };
-
-      var rsa = BackupLib.KeyLoader.LoadRSAKey("c:\\tmp\\id_rsa_1_pub");
-      var fe = new BackupLib.FileEncrypt(rsa);
-
-      var fflst = new BUCommon.FreezeFile[] { ff};
-      uploader.run(cont, fflst, fe, null);
     }
 
     [TestMethod]

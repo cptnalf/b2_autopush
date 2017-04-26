@@ -31,16 +31,23 @@ namespace BackupLib.commands
         .run();
 
       /* start with creates, updates, then deletes. */
-      var dp = new DiffProcessor { container=container, service=account.service, maxTasks=10, root=pathRoot, encKey=keyFile};
+      var dp = new DiffProcessor 
+        { 
+          container=container
+          , account=account
+          , maxTasks=10
+          , root=pathRoot
+          , encKey=keyFile
+        };
 
       dp.add(cmp.Where(x => x.type == DiffType.created));
-      dp.run();
+      dp.run(RunType.upload);
 
       dp.add(cmp.Where(x => x.type == DiffType.updated));
-      dp.run();
+      dp.run(RunType.upload);
       
       dp.add(cmp.Where(x => x.type == DiffType.deleted));
-      dp.run();
+      dp.run(RunType.upload);
     }
   }
 }

@@ -51,7 +51,11 @@ namespace BUCommon
 
     public Container add(Container cont)
     {
-      foreach(var f in cont.files) { add(f); }
+      foreach(var f in cont.files) 
+        { 
+          if (f.container == null) { f.container = cont; }
+          add(f);
+        }
 
       var oldc = _containers.Where(x => x.id == cont.id && x.accountID == cont.accountID).FirstOrDefault();
 
@@ -61,7 +65,7 @@ namespace BUCommon
           cont = oldc;
         }
       else 
-        { _containers.Add(cont); }
+        { _containers.Add(cont); oldc=cont; }
       
       cont.files.Clear();
       foreach(var f in _files

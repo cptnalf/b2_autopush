@@ -15,6 +15,13 @@ namespace BackupLib
   using MemoryStream = System.IO.MemoryStream;
   using StreamReader = System.IO.StreamReader;
 
+  public enum RunType
+  {
+    unknown
+    ,upload
+    ,download
+  }
+
   public class DiffProcessor
   {
     internal class TLocalData
@@ -28,7 +35,7 @@ namespace BackupLib
     public int maxTasks {get;set;}
     public Action<FileDiff,Exception> errorHandler {get;set;}
     public Action<FileDiff> progressHandler {get;set;}
-    public BUCommon.IFileSvc service {get;set;}
+    public BUCommon.Account account {get;set;}
     public BUCommon.Container container {get;set;}
     public string encKey {get;set;}
     public string root {get;set;}
@@ -38,7 +45,7 @@ namespace BackupLib
     public void add(FileDiff d) { _diffs.Add(d); }
     public void add(IEnumerable<FileDiff> ds) { _diffs.AddRange(ds); }
 
-    public void run()
+    public void run(RunType rt)
     {
       byte[] keyfile;
       {
@@ -54,6 +61,9 @@ namespace BackupLib
 
       if (maxTasks <= 0 || maxTasks > 100) { maxTasks =0; }
 
+      var service = account.service;
+      var cache = service.fileCache;
+
       var tasks = Parallel.ForEach(_diffs
         ,new ParallelOptions { MaxDegreeOfParallelism=maxTasks}
         ,() => 
@@ -68,17 +78,61 @@ namespace BackupLib
         ,(x,pls,tl) =>
         {
           progressHandler?.Invoke(x);
-
-          string path = x.local.path.Replace('/', '\\');
-          path = Path.Combine(root, path);
+          
+          string path = string.Empty;
+          
           FileStream filestrm = null;
           try {
-              filestrm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite|FileShare.Delete);
+            switch(rt)
+              {
+              case RunType.upload: 
+                { 
+                  path = x.local.path.Replace('/', Path.DirectorySeparatorChar); 
+                  path = Path.Combine(root, path);
+                  filestrm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite|FileShare.Delete);
+                  var hash = tl.fe.hashContents(filestrm);
+                  /* since we're reading anyways, populate the file hash. */
+                  x.local.localHash = hash;
+                  cache.add(x.local);
 
-              var memstrm = tl.fe.encrypt(filestrm);
-              service.uploadFile(container, x.local, memstrm);
-              memstrm.Dispose();
-              memstrm = null;
+                  var memstrm = tl.fe.encrypt(filestrm);
+                  service.uploadFile(container, x.local, memstrm);
+                  memstrm.Dispose();
+                  memstrm = null;
+                  break; 
+                }
+              case RunType.download: 
+                {
+                  /* this really needs to check to see if we need to download it. 
+                   * that will make it resumeable.
+                   */
+                  path = Path.Combine(root, x.remote.path.Replace('/', Path.DirectorySeparatorChar));
+
+                  {
+                    /* need to make sure the download directory parts exist before we download and save the file. */
+                    var pathfname = Path.GetFileName(path);
+                    var pathpart = path.Substring(0,path.Length - pathfname.Length);
+                    System.IO.Directory.CreateDirectory(pathpart);
+                  }
+
+                  var strm = service.downloadFile(x.remote);
+                  filestrm = new FileStream(path, FileMode.Create, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                  tl.fe.decrypt(strm, filestrm);
+                  strm.Dispose();
+                  strm = null;
+
+                  var hash = tl.fe.hashContents(filestrm);
+
+                  x.remote.localHash = hash;
+                  cache.add(x.remote);
+
+                  filestrm.Close();
+                  filestrm.Dispose();
+                  filestrm = null;
+
+                  break; 
+                }
+              }
           } 
           catch (Exception e)
             {

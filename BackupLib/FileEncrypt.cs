@@ -122,6 +122,21 @@ namespace BackupLib
     }
 
     /// <summary>
+    /// computes the hash of the given stream.
+    /// </summary>
+    /// <param name="strm"></param>
+    /// <returns></returns>
+    public BUCommon.Hash hashContents(Stream strm)
+    {
+      var hasha = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+      strm.Seek(0, SeekOrigin.Begin);
+      var res = _computeHash(strm, hasha);
+      hasha.Dispose();
+      strm.Seek(0, SeekOrigin.Begin);
+      return BUCommon.Hash.Create(HashAlgorithmName.SHA256.Name, res);
+    }
+
+    /// <summary>
     /// encrypt the contents of the provided stream.
     /// </summary>
     /// <param name="instrm"></param>
@@ -210,7 +225,7 @@ namespace BackupLib
     /// and then the contents will be verified via the hash
     /// embeded in the encrypted file's header.
     /// </remarks>
-    public void decrypt(MemoryStream instrm, FileStream strm)
+    public void decrypt(Stream instrm, FileStream strm)
     {
       byte[] origHash = null;
       IncrementalHash incHash;
