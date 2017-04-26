@@ -64,6 +64,7 @@ b2_get_download_authorization
     private BUCommon.FileCache _cache;
     private BUCommon.AuthStorage _auth;
 
+    public BUCommon.Account account {get; set;}
     public BUCommon.FileCache fileCache { get { return _cache;} set { _cache = value; } }
     public BUCommon.AuthStorage auth { get { return _auth; } set { _auth = value; } }
 
@@ -106,6 +107,7 @@ b2_get_download_authorization
           var cb = new BUCommon.Container
             {
                id=x.BucketId
+               , accountID=account.id
                , name=x.BucketName
                ,type=x.BucketType
             };
@@ -219,7 +221,7 @@ b2_get_download_authorization
     public void uploadFile(BUCommon.Container cont, BUCommon.FreezeFile file, System.IO.Stream contents)
     { var foo = uploadFileAsync(cont, file, contents).Result; }
 
-    public async Task<string> uploadFileAsync(BUCommon.Container cont, BUCommon.FreezeFile file, System.IO.Stream contents)
+    public async Task<BUCommon.FreezeFile> uploadFileAsync(BUCommon.Container cont, BUCommon.FreezeFile file, System.IO.Stream contents)
     {
       DateTimeOffset dto = new DateTimeOffset(file.modified.ToUniversalTime());
       var millis = dto.ToUnixTimeMilliseconds();
@@ -243,7 +245,7 @@ b2_get_download_authorization
 
       _cache.add(ff);
 
-      return ff.fileID;
+      return ff;
     }
 
     public async Task<System.IO.Stream> downloadFileAsync(BUCommon.FreezeFile file)
@@ -267,6 +269,7 @@ b2_get_download_authorization
             }
         }
 
+      _cache.add(file);
       return new System.IO.MemoryStream(task.FileData);
     }
 

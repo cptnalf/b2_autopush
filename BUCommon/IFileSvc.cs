@@ -17,6 +17,7 @@ namespace BUCommon
   public interface IFileSvc
   {
     FileCache fileCache {get;set;}
+    Account account {get;set;}
     
     void setParams(string connstr);
     void authorize();
@@ -26,9 +27,30 @@ namespace BUCommon
 
     void delete(FreezeFile file);
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="container"></param>
+    /// <param name="file"></param>
+    /// <param name="contents"></param>
+    /// <remarks>
+    /// when a file is uploaded to the service
+    /// , it's expected that the implementor will update the cache with the new information
+    /// that the uploade creates.
+    /// </remarks>
     void uploadFile(Container container, FreezeFile file, Stream contents);
-    Task<string> uploadFileAsync(Container container, FreezeFile file, Stream contents);
+    Task<FreezeFile> uploadFileAsync(Container container, FreezeFile file, Stream contents);
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="file"></param>
+    /// <returns></returns>
+    /// <remarks>
+    /// when a file is downloaded, any additional information the service provides
+    /// should be added to the FreezeFile object and persisted in the cache
+    /// so that it's available to the program going forward.
+    /// </remarks>
     Stream downloadFile(FreezeFile file);
     Task<Stream> downloadFileAsync(FreezeFile file);
   }
