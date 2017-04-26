@@ -73,7 +73,8 @@ namespace BackupLib
 
           var fe1 = new FileEncrypt(rsa);
           sr = null;
-          return new TLocalData { fe=fe1 };
+          var td = service.threadStart();
+          return new TLocalData { fe=fe1, auth=td };
         }
         ,(x,pls,tl) =>
         {
@@ -94,9 +95,9 @@ namespace BackupLib
                   /* since we're reading anyways, populate the file hash. */
                   x.local.localHash = hash;
                   cache.add(x.local);
-
+                  
                   var memstrm = tl.fe.encrypt(filestrm);
-                  service.uploadFile(container, x.local, memstrm);
+                  service.uploadFile(tl.auth, container, x.local, memstrm);
                   memstrm.Dispose();
                   memstrm = null;
                   break; 
@@ -141,7 +142,7 @@ namespace BackupLib
             }
           return tl;
         }
-        ,x => { }
+        ,x => { service.threadStop(x.auth); }
         );
     }
   }

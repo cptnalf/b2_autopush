@@ -56,6 +56,9 @@ namespace BackupLib
 
     public IReadOnlyList<FreezeFile> getVersions(Container container) { return getFiles(container); }
 
+    public object threadStart() { return null; }
+    public void threadStop(object data) { }
+
     public Stream downloadFile(FreezeFile file) { return downloadFileAsync(file).Result; }
 
     public async Task<Stream> downloadFileAsync(FreezeFile file)
@@ -64,10 +67,10 @@ namespace BackupLib
       return await Task.Run(() => fstrm);
     }
 
-    public void uploadFile(Container container, FreezeFile file, Stream contents)
-    { var f = uploadFileAsync(container, file, contents).Result; }
+    public void uploadFile(object threadData, Container container, FreezeFile file, Stream contents)
+    { var f = uploadFileAsync(threadData, container, file, contents).Result; }
 
-    public async Task<FreezeFile> uploadFileAsync(Container container, FreezeFile file, Stream contents)
+    public async Task<FreezeFile> uploadFileAsync(object threadData, Container container, FreezeFile file, Stream contents)
     {
       var path = string.Empty;
       if (string.IsNullOrWhiteSpace(file.fileID)) 

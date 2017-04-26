@@ -59,6 +59,12 @@ b2_get_download_authorization
   /// </summary>
   public class Connection : BUCommon.IFileSvc
   {
+    internal class UploadData
+    {
+      public string url {get;set;} 
+      public string auth {get;set;}
+    }
+
     private B2Client _client;
     private B2Net.Models.B2Options _opts;
     private BUCommon.FileCache _cache;
@@ -218,32 +224,94 @@ b2_get_download_authorization
       return res.FileId;
     }
 
-    public void uploadFile(BUCommon.Container cont, BUCommon.FreezeFile file, System.IO.Stream contents)
-    { var foo = uploadFileAsync(cont, file, contents).Result; }
-
-    public async Task<BUCommon.FreezeFile> uploadFileAsync(BUCommon.Container cont, BUCommon.FreezeFile file, System.IO.Stream contents)
+    public object threadStart()
     {
+      return new UploadData();
+    }
+
+    public void threadStop(object data) { }
+
+    public void uploadFile(object threadData, BUCommon.Container cont, BUCommon.FreezeFile file, System.IO.Stream contents)
+    { var foo = uploadFileAsync(threadData, cont, file, contents).Result; }
+
+    public async Task<BUCommon.FreezeFile> uploadFileAsync(object threadData, BUCommon.Container cont, BUCommon.FreezeFile file, System.IO.Stream contents)
+    {
+      UploadData data = threadData as UploadData;
+
       DateTimeOffset dto = new DateTimeOffset(file.modified.ToUniversalTime());
       var millis = dto.ToUnixTimeMilliseconds();
       var argdic = new Dictionary<string,string>();
       argdic.Add("src_last_modified_millis", millis.ToString());
+
       byte[] bytes = await BUCommon.IOUtils.ReadStream(contents);
 
-      var res = await _client.Files.Upload(bytes, file.path, cont.id, argdic);
+      BUCommon.FreezeFile ff = null;
+      B2Net.Models.B2File res = null;
+      bool delay = false;
+      int pausetime = 1;
+      int maxDelay = 64;
 
-      /* create another freezefile for the new bit. */
-      var ff = new BUCommon.FreezeFile
+      for(int i=0; i < 5; ++i)
         {
-          fileID=res.FileId
-          , container=cont
-          , uploaded = res.UploadTimestampDate
-          , storedHash = BUCommon.Hash.Create("SHA1", res.ContentSHA1)
-          , mimeType = res.ContentType
-          , path = res.FileName
-          , modified =file.modified
-        };
+          if (data.auth == null) { _getULAuth(data, cont.id); }
+          
+          if (delay)
+            {
+              bool iserr = true;
+              while(true)
+                {
+                  try {
+                    System.Threading.Thread.Sleep(pausetime * 1000);
+                    res = await _client.Files.Upload(bytes, file.path, cont.id, argdic);
+                    iserr = false;
+                  }
+                  catch(B2Net.B2Exception be1)
+                    {
+                      if (be1.status == "503" && pausetime < maxDelay) 
+                        { pausetime = pausetime * 2; }
+                    }
 
-      _cache.add(ff);
+                  if (! iserr) { break; }
+                  if (pausetime > maxDelay) { break; }
+                }
+
+              pausetime = 1;
+              delay = false;
+            }
+
+          if (res == null)
+            {
+              try {
+                res = await _client.Files.Upload(bytes, file.path, cont.id, argdic);
+                }
+              catch (B2Net.B2Exception be)
+                {
+                  if (be.status == "401") { data.auth = null; }
+                  else if (be.status == "408" || be.status == "429") 
+                    { delay = true; pausetime = 1; }
+                  else
+                    { throw new Exception("Broken.", be); }
+                }
+            }
+
+          if (res != null)
+            {
+              /* create another freezefile for the new bit. */
+              ff = new BUCommon.FreezeFile
+                {
+                  fileID=res.FileId
+                  , container=cont
+                  , uploaded = res.UploadTimestampDate
+                  , storedHash = BUCommon.Hash.Create("SHA1", res.ContentSHA1)
+                  , mimeType = res.ContentType
+                  , path = res.FileName
+                  , modified =file.modified
+                };
+
+              _cache.add(ff);
+              break;
+            }
+        }
 
       return ff;
     }
@@ -274,5 +342,13 @@ b2_get_download_authorization
     }
 
     public System.IO.Stream downloadFile(BUCommon.FreezeFile file) { return downloadFileAsync(file).Result; }
+
+    private void _getULAuth(UploadData data, string bucketID)
+    {
+      var url = _client.Files.GetUploadUrl(bucketID).Result;
+
+      data.url=url.UploadUrl;
+      data.auth = url.AuthorizationToken;
+    }
   }
 }
