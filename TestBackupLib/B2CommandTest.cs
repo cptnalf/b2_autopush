@@ -9,7 +9,7 @@ namespace TestBackupLib
   public class B2CommandTest
   {
     private BUCommon.AccountList _accts = null;
-    protected string acctname => "localtest";
+    protected string acctname => "b2";
     protected string testRoot => @"c:\tmp\photos";
     protected string testDest => @"c:\tmp\photos1";
     protected string pubKey => @"c:\tmp\id_rsa_1_pub";
