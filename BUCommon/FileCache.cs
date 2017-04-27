@@ -25,19 +25,42 @@ namespace BUCommon
 
     public void add(FreezeFile ff)
     {
-      /** @TODO need to find a way to merge ffs
-       *  eg: ff has hash, but existing doesn't.
-       *  new ff doesn't have hash, but existing does.
-       *  file-id, upload date, ...
-       */
-      var oldf = _files
-        .Where(x => (!string.IsNullOrWhiteSpace(x.fileID) && x.fileID == ff.fileID) 
-                 || (string.IsNullOrWhiteSpace(x.fileID) && x.path == ff.path))
-        .FirstOrDefault();
+      FreezeFile oldf = null;
+      
+      if (ff.container == null)
+        {
+          oldf = _files
+            .Where(x =>    (x.container == null)
+                        && (   (!string.IsNullOrWhiteSpace(x.fileID) && x.fileID == ff.fileID) 
+                            || (string.IsNullOrWhiteSpace(x.fileID) && x.path == ff.path)
+                            )
+                   )
+            .FirstOrDefault();
+        }
+      else
+        {
+          oldf = _files
+            .Where(x =>    (   x.container != null 
+                               && (x.container == ff.container
+                                   || (x.container.accountID == ff.container.accountID && x.container.id == ff.container.id))
+                           )
+                        && (   (!string.IsNullOrWhiteSpace(x.fileID) && x.fileID == ff.fileID) 
+                            || (string.IsNullOrWhiteSpace(x.fileID) && x.path == ff.path)
+                            )
+                   )
+            .FirstOrDefault();          
+        }
 
       if (oldf == null) { _files.Add(ff); }
       else
         {
+          if (oldf.localHash != null && ff.localHash == null)
+            { ff.localHash = oldf.localHash; }
+          if (oldf.storedHash != null && ff.storedHash == null)
+            { ff.storedHash = oldf.storedHash; }
+          if (oldf.uploaded != DateTime.MinValue && ff.uploaded == DateTime.MinValue)
+            { ff.uploaded = oldf.uploaded; }
+
           _files.Remove(oldf);
           _files.Add(ff);
         }
