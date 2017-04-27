@@ -94,13 +94,16 @@ namespace BackupLib
                   var hash = tl.fe.hashContents(filestrm);
                   /* since we're reading anyways, populate the file hash. */
                   x.local.localHash = hash;
-                  cache.add(x.local);
                   
                   var memstrm = tl.fe.encrypt(filestrm);
                   var ff = service.uploadFile(tl.auth, container, x.local, memstrm);
                   memstrm.Dispose();
                   memstrm = null;
-                  cache.add(ff);
+                  lock(cache) 
+                    {
+                      cache.add(x.local);
+                      cache.add(ff);
+                    }
                   break; 
                 }
               case RunType.download: 
@@ -126,7 +129,7 @@ namespace BackupLib
                   var hash = tl.fe.hashContents(filestrm);
 
                   x.remote.localHash = hash;
-                  cache.add(x.remote);
+                  lock(cache) { cache.add(x.remote); }
 
                   filestrm.Close();
                   filestrm.Dispose();
