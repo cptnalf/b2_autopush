@@ -33,6 +33,8 @@ namespace BackupLib
       if (File.Exists(file))
         { fc.load(file); }
 
+      acctlst.filecache = fc;
+
       foreach(var a in acctlst) { Load(acctlst, a); }
 
       return acctlst;

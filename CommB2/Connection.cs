@@ -72,7 +72,6 @@ b2_get_download_authorization
 
     public BUCommon.Account account {get; set;}
     public BUCommon.FileCache fileCache { get { return _cache;} set { _cache = value; } }
-    public BUCommon.AuthStorage auth { get { return _auth; } set { _auth = value; } }
 
     public void setParams(string connstr)
     {
@@ -81,14 +80,18 @@ b2_get_download_authorization
       opts.AccountId = parts[0];
       opts.ApplicationKey = parts[1];
       
-      opts.AuthorizationToken = _auth["AuthorizationToken"];
-      opts.DownloadUrl = _auth["DownloadUrl"];
-      opts.ApiUrl = _auth["ApiUrl"];
+      opts.AuthorizationToken = account.auth["AuthorizationToken"];
+      opts.DownloadUrl = account.auth["DownloadUrl"];
+      opts.ApiUrl = account.auth["ApiUrl"];
 
       opts.AuthorizationToken = "<token>";
       opts.DownloadUrl = "https://f001.backblazeb2.com";
       opts.ApiUrl = "https://api001.backblazeb2.com";
       
+      account.auth["AuthorizationToken"] = opts.AuthorizationToken;
+      account.auth["DownloadUrl"] = opts.DownloadUrl;
+      account.auth["ApiUrl"] = opts.ApiUrl;
+
       _client = new B2Client(opts);
 
       /*

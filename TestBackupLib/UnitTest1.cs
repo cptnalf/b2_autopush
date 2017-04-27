@@ -38,7 +38,7 @@ namespace TestBackupLib
         }
       BackupLib.AccountBuilder.Save(accts);
 
-      acct.service.authorize();
+      //acct.service.authorize();
     }
 
     [TestMethod]

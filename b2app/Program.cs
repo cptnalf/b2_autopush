@@ -30,7 +30,7 @@ namespace b2app
        * sync (maybe this is same as above?)
        *  - diff between local directory structure and remote structure
        *    push files that have changed/new/deleted up to remote.
-       * 
+       * authorize
        * 
        */
 

@@ -108,6 +108,12 @@ namespace BUCommon
       return cont.files;
     }
 
+    public IReadOnlyList<Container> getContainers(long accountID)
+    {
+      var cont = _containers.Where(x => x.accountID == accountID).ToList();
+      return cont;
+    }
+
     public IReadOnlyList<FreezeFile> getdir(string folder)
     {
       var lst = 
