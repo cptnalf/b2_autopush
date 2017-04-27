@@ -87,7 +87,7 @@ b2_get_download_authorization
       opts.AuthorizationToken = "<token>";
       opts.DownloadUrl = "https://f001.backblazeb2.com";
       opts.ApiUrl = "https://api001.backblazeb2.com";
-      
+      _opts = opts;
       account.auth["AuthorizationToken"] = opts.AuthorizationToken;
       account.auth["DownloadUrl"] = opts.DownloadUrl;
       account.auth["ApiUrl"] = opts.ApiUrl;
@@ -132,6 +132,13 @@ b2_get_download_authorization
     /// </summary>
     public void authorize() 
     {
+      var opts = new B2Net.Models.B2Options
+        {
+          AccountId=_opts.AccountId
+          , ApplicationKey = _opts.ApplicationKey
+        };
+      _client = new B2Client(opts);
+
       _opts = _client.Authorize().Result; 
       _auth.add("AuthorizationToken", _opts.AuthorizationToken);
       _auth.add("DownloadUrl", _opts.DownloadUrl);
