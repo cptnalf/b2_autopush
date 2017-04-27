@@ -33,7 +33,7 @@ namespace BackupLib
       var conts = new List<Container>();
 
       foreach(var d in dirs) 
-        { conts.Add(new Container { id=Path.Combine(_root,d), name=d,type=null, accountID=account.id}); }
+        { conts.Add(new Container { id=d, name=Path.GetFileName(d) ,type=null, accountID=account.id}); }
 
       return conts;
     }
@@ -67,8 +67,8 @@ namespace BackupLib
       return await Task.Run(() => fstrm);
     }
 
-    public void uploadFile(object threadData, Container container, FreezeFile file, Stream contents)
-    { var f = uploadFileAsync(threadData, container, file, contents).Result; }
+    public FreezeFile uploadFile(object threadData, Container container, FreezeFile file, Stream contents)
+    { return uploadFileAsync(threadData, container, file, contents).Result; }
 
     public async Task<FreezeFile> uploadFileAsync(object threadData, Container container, FreezeFile file, Stream contents)
     {
@@ -104,8 +104,6 @@ namespace BackupLib
         for(int i=0; i < hash.Length; ++i) { sb.AppendFormat("{0:x2}", hash[i]); }
         ff.storedHash = Hash.Create("SHA256", sb.ToString());
       }
-
-      fileCache.add(ff);
 
       return ff;
     }

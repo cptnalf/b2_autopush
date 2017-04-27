@@ -16,7 +16,7 @@ namespace TestBackupLib
     protected string privateKey => @"c:\tmp\id_rsa_1";
 
     [TestMethod]
-    public void AuthorizeAcct()
+    public void CmdAuthorize()
     {
       var acct = _getAcct();
       var auth = new BackupLib.commands.Authorize {account=acct, accounts=_accts};
@@ -24,7 +24,7 @@ namespace TestBackupLib
     }
 
     [TestMethod]
-    public void ContainerList()
+    public void CmdContainerList()
     {
       var acct = _getAcct();
       var conts = new BackupLib.commands.Containers { account=acct, cache=acct.service.fileCache};
@@ -34,7 +34,7 @@ namespace TestBackupLib
     }
 
     [TestMethod]
-    public void FileList()
+    public void CmdFileList()
     {
       var acct = _getAcct();
 
@@ -57,7 +57,7 @@ namespace TestBackupLib
     }
 
     [TestMethod]
-    public void CopyRemote()
+    public void CmdCopyRemote()
     {
       var acct = _getAcct();
 
@@ -75,7 +75,7 @@ namespace TestBackupLib
     }
 
     [TestMethod]
-    public void Sync()
+    public void CmdSync()
     {
       var acct = _getAcct();
       
@@ -93,7 +93,7 @@ namespace TestBackupLib
     }
 
     [TestMethod]
-    public void CopyLocal()
+    public void CmdCopyLocal()
     {
       var acct = _getAcct();
 
@@ -118,7 +118,7 @@ namespace TestBackupLib
     }
 
     [TestCleanup]
-    protected void _cleanup()
+    public void _cleanup()
     {
       if (_accts != null)
         { BackupLib.AccountBuilder.Save(_accts); }

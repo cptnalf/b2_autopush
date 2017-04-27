@@ -25,12 +25,15 @@ namespace b2app
           Console.WriteLine("\t{0}", cmd.helptext);
         }
 
-      /* commands:
-       * copy (forces push?)
-       * sync (maybe this is same as above?)
-       *  - diff between local directory structure and remote structure
-       *    push files that have changed/new/deleted up to remote.
-       * authorize
+      /*
+       * load defaults:
+       * all options would be parsed, just maybe not used.
+       * keys should be defaulted to account and cache storage locations.
+       * 
+       * need a 'default account' creation tool that would generate
+       * a local-service account pointing to a directory in their home.
+       * - easy to test usage, and maybe provide a why to construct accounts manually.
+       *   atleast until an account-creation tool is constructed.
        * 
        */
 

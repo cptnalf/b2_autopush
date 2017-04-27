@@ -70,5 +70,33 @@ namespace TestBackupLib
       Assert.IsNotNull(item);
       Assert.AreEqual("blarg/blarg1.obj", item.path);
     }
+
+    [TestMethod]
+    public void TestAccountBuilderLoad()
+    {
+      var accts = BackupLib.AccountBuilder.BuildAccounts();
+      Assert.IsNotNull(accts);
+      Assert.IsNotNull(accts.filecache);
+      Assert.IsTrue(accts.accounts.Count > 0);
+      foreach(var acct in accts)
+        {
+          Assert.IsNotNull(acct.service);
+          Assert.IsNotNull(acct.auth);
+          Assert.IsNotNull(acct.service.fileCache);
+          Assert.IsTrue(accts.filecache == acct.service.fileCache);
+        }
+    }
+
+    [TestMethod]
+    public void TestAccountBuilderSave()
+    {
+      var accts = BackupLib.AccountBuilder.BuildAccounts();
+
+      var cont = new BUCommon.Container { accountID=2, id=@"C:\tmp\b2test\cont1", name="cont1" };
+      accts.filecache.add(cont);
+      var ff = new BUCommon.FreezeFile { container=cont, fileID=@"C:\tmp\b2test\cont1\2016\1231-newyears\DSC06560.ARW", path="2016/1231-newyears/DSC06560.ARW"};
+      accts.filecache.add(ff);
+      BackupLib.AccountBuilder.Save(accts);
+    }
   }
 }

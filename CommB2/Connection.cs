@@ -121,7 +121,7 @@ b2_get_download_authorization
                ,type=x.BucketType
             };
           
-          buckets.Add(_cache.add(cb));
+          buckets.Add(cb);
         }
 
       return buckets;
@@ -172,7 +172,6 @@ b2_get_download_authorization
                , mimeType = f.ContentType
                ,container = cont
               };
-            _cache.add(ff);
             list.Add(ff);
           }
         startfile = files.NextFileName;
@@ -234,8 +233,8 @@ b2_get_download_authorization
 
     public void threadStop(object data) { }
 
-    public void uploadFile(object threadData, BUCommon.Container cont, BUCommon.FreezeFile file, System.IO.Stream contents)
-    { var foo = uploadFileAsync(threadData, cont, file, contents).Result; }
+    public BUCommon.FreezeFile uploadFile(object threadData, BUCommon.Container cont, BUCommon.FreezeFile file, System.IO.Stream contents)
+    { return uploadFileAsync(threadData, cont, file, contents).Result; }
 
     public async Task<BUCommon.FreezeFile> uploadFileAsync(object threadData, BUCommon.Container cont, BUCommon.FreezeFile file, System.IO.Stream contents)
     {
@@ -311,7 +310,6 @@ b2_get_download_authorization
                   , modified =file.modified
                 };
 
-              _cache.add(ff);
               break;
             }
         }

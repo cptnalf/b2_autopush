@@ -38,7 +38,7 @@ namespace BUCommon
     /// , it's expected that the implementor will update the cache with the new information
     /// that the uploade creates.
     /// </remarks>
-    void uploadFile(object threadData, Container container, FreezeFile file, Stream contents);
+    FreezeFile uploadFile(object threadData, Container container, FreezeFile file, Stream contents);
     Task<FreezeFile> uploadFileAsync(object threadData, Container container, FreezeFile file, Stream contents);
 
     /// <summary>

@@ -97,9 +97,10 @@ namespace BackupLib
                   cache.add(x.local);
                   
                   var memstrm = tl.fe.encrypt(filestrm);
-                  service.uploadFile(tl.auth, container, x.local, memstrm);
+                  var ff = service.uploadFile(tl.auth, container, x.local, memstrm);
                   memstrm.Dispose();
                   memstrm = null;
+                  cache.add(ff);
                   break; 
                 }
               case RunType.download: 

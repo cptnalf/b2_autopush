@@ -25,6 +25,11 @@ namespace BUCommon
 
     public void add(FreezeFile ff)
     {
+      /** @TODO need to find a way to merge ffs
+       *  eg: ff has hash, but existing doesn't.
+       *  new ff doesn't have hash, but existing does.
+       *  file-id, upload date, ...
+       */
       var oldf = _files
         .Where(x => (!string.IsNullOrWhiteSpace(x.fileID) && x.fileID == ff.fileID) 
                  || (string.IsNullOrWhiteSpace(x.fileID) && x.path == ff.path))
