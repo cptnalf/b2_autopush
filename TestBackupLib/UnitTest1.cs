@@ -99,24 +99,5 @@ namespace TestBackupLib
       Assert.IsNotNull(files);
       Assert.IsTrue(files.Any());
     }
-
-    [TestMethod]
-    public void B2DownloadTest()
-    {
-      var accts = BackupLib.AccountBuilder.BuildAccounts();
-      var acct = accts.FirstOrDefault();
-      BUCommon.FileCache uc = new BUCommon.FileCache();
-      uc.load("C:\\tmp\\photos.cache");
-
-      //acct.service.open();
-
-      var files = uc.getdir("2016");
-      var dl = new BackupLib.Downloader { concurrent=1, fileService=acct.service, root="c:\\tmp\\rstphotos"};
-      dl.errorFX= (ex,str) => { Console.WriteLine("{0}:{1}", ex.ToString(), str); };
-      var rsa = BackupLib.KeyLoader.LoadRSAKey("c:\\tmp\\id_rsa_1");
-      var fe = new BackupLib.FileEncrypt(rsa);
-
-      dl.run(files,fe,null);
-    }
   }
 }

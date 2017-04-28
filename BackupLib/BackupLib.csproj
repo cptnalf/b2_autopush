@@ -60,7 +60,6 @@
     <Compile Include="commands\Sync.cs" />
     <Compile Include="DiffProcessor.cs" />
     <Compile Include="DirDiff.cs" />
-    <Compile Include="Downloader.cs" />
     <Compile Include="FileEncrypt.cs" />
     <Compile Include="IFileLister.cs" />
     <Compile Include="KeyLoader.cs" />
