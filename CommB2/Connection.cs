@@ -68,7 +68,6 @@ b2_get_download_authorization
     private B2Client _client;
     private B2Net.Models.B2Options _opts;
     private BUCommon.FileCache _cache;
-    private BUCommon.AuthStorage _auth;
 
     public BUCommon.Account account {get; set;}
     public BUCommon.FileCache fileCache { get { return _cache;} set { _cache = value; } }
@@ -77,16 +76,18 @@ b2_get_download_authorization
     {
       var parts = BUCommon.FileSvcBase.ParseConnStr(connstr);
       var opts = new B2Net.Models.B2Options();
-      opts.AccountId = parts[0];
-      opts.ApplicationKey = parts[1];
+      opts.AccountId = parts[0].Trim();
+      opts.ApplicationKey = parts[1].Trim();
       
       opts.AuthorizationToken = account.auth["AuthorizationToken"];
       opts.DownloadUrl = account.auth["DownloadUrl"];
       opts.ApiUrl = account.auth["ApiUrl"];
 
+      /*
       opts.AuthorizationToken = "<token>";
       opts.DownloadUrl = "https://f001.backblazeb2.com";
       opts.ApiUrl = "https://api001.backblazeb2.com";
+      */
       _opts = opts;
       account.auth["AuthorizationToken"] = opts.AuthorizationToken;
       account.auth["DownloadUrl"] = opts.DownloadUrl;
@@ -140,9 +141,9 @@ b2_get_download_authorization
       _client = new B2Client(opts);
 
       _opts = _client.Authorize().Result; 
-      _auth.add("AuthorizationToken", _opts.AuthorizationToken);
-      _auth.add("DownloadUrl", _opts.DownloadUrl);
-      _auth.add("ApiUrl", _opts.ApiUrl);
+      account.auth["AuthorizationToken"] = _opts.AuthorizationToken;
+      account.auth["DownloadUrl"] = _opts.DownloadUrl;
+      account.auth["ApiUrl"] = _opts.ApiUrl;
     }
 
     public BUCommon.Container containerCreate(BUCommon.Account account, string name)

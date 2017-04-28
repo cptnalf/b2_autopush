@@ -41,8 +41,6 @@ namespace BUCommon
 
     public AuthStorage() { this.parameters = new List<Pair>(); }
 
-    public void add(string name, string value) { this.parameters.Add(new Pair(name,value)); }
-
     public void save(string file)
     {
       XmlUtils.WriteXml(file, this, new Type[] { typeof(Pair)});

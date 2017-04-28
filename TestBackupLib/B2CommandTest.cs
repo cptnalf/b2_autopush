@@ -33,8 +33,7 @@ namespace TestBackupLib
       Assert.IsTrue(acct.service.fileCache.containers.Where(x => x.accountID == acct.id).Any());
     }
 
-    [TestMethod]
-    public void CmdFileList()
+    private void _CmdFileList(bool forceRemote)
     {
       var acct = _getAcct();
 
@@ -48,12 +47,24 @@ namespace TestBackupLib
         .FirstOrDefault();
 
       bool rmt = true;
-      if (file != null) { rmt = false; }
+      if (!forceRemote && file != null) { rmt = false; }
 
       var filelist = new BackupLib.commands.FileList { account=acct, cache=acct.service.fileCache, container=cont, useRemote=rmt};
       var res = filelist.run();
       Assert.IsNotNull(res);
-      Assert.IsTrue(res.Any());
+      Assert.IsTrue(res.Any(), "No files were found! (check remote for files)");
+    }
+
+    [TestMethod]
+    public void CmdFileList()
+    {
+      _CmdFileList(false);
+    }
+
+    [TestMethod]
+    public void CmdFileListRemote()
+    {
+      _CmdFileList(true);
     }
 
     [TestMethod]

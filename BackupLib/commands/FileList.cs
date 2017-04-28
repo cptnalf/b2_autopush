@@ -54,7 +54,7 @@ namespace BackupLib.commands
           cq.run();
         }
 
-      var containers = container == null ? cache.containers : cache.containers.Where(x => x.accountID == container.accountID && x.id == container.id);
+      var containers = (container == null ? cache.containers : cache.containers.Where(x => x.accountID == container.accountID && x.id == container.id)).ToList();
       foreach(var c in containers)
         {
           IReadOnlyList<BUCommon.FreezeFile> files = null;
@@ -63,6 +63,19 @@ namespace BackupLib.commands
           else
             { files = account.service.getFiles(c); }
           
+          /* so, we are listing everything
+           * , this should REPLACE the existing list, not augment it.
+           * -- might need to tag 'versions' of files so that we get things correctly 
+           *    picked.
+           */
+          if (c.files.Any())
+            {
+              c.files.Clear();
+              c.files.AddRange(files);
+            }
+
+          cache.delete(c);
+          cache.add(c);
           foreach(var f in files) { cache.add(f); }
         }
     }
