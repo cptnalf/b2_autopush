@@ -51,8 +51,8 @@ namespace BUCommon
     /// should be added to the FreezeFile object and persisted in the cache
     /// so that it's available to the program going forward.
     /// </remarks>
-    Stream downloadFile(FreezeFile file);
-    Task<Stream> downloadFileAsync(FreezeFile file);
+    Stream downloadFile(object threadData, FreezeFile file);
+    Task<Stream> downloadFileAsync(object threadData, FreezeFile file);
 
     object threadStart();
     void threadStop(object data);

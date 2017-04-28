@@ -120,7 +120,7 @@ namespace BackupLib
                     System.IO.Directory.CreateDirectory(pathpart);
                   }
 
-                  var strm = service.downloadFile(x.remote);
+                  var strm = service.downloadFile(tl.auth, x.remote);
                   filestrm = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete);
                   tl.fe.decrypt(strm, filestrm);
                   strm.Dispose();

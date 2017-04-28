@@ -59,10 +59,15 @@ b2_get_download_authorization
   /// </summary>
   public class Connection : BUCommon.IFileSvc
   {
-    internal class UploadData
+    internal class TransferData
     {
       public string url {get;set;} 
       public string auth {get;set;}
+
+      /// <summary>
+      /// for downloading, since downloads are per-thread, not per-host
+      /// </summary>
+      public B2Client client {get;set;}
     }
 
     private B2Client _client;
@@ -144,6 +149,8 @@ b2_get_download_authorization
       account.auth["AuthorizationToken"] = _opts.AuthorizationToken;
       account.auth["DownloadUrl"] = _opts.DownloadUrl;
       account.auth["ApiUrl"] = _opts.ApiUrl;
+      account.auth["MinPartSize"] = string.Format("{0:n}", _opts.absoluteMinimumPartSize);
+      account.auth["RecommendedPartSize"] = string.Format("{0:n}",_opts.recommendedPartSize);
     }
 
     public BUCommon.Container containerCreate(BUCommon.Account account, string name)
@@ -236,17 +243,22 @@ b2_get_download_authorization
 
     public object threadStart()
     {
-      return new UploadData();
+      return new TransferData();
     }
 
-    public void threadStop(object data) { }
+    public void threadStop(object data) 
+    {
+      TransferData d1 = data as TransferData;
+      if (d1 != null)
+        { if (d1.client != null) { d1.client = null; } }
+    }
 
     public BUCommon.FreezeFile uploadFile(object threadData, BUCommon.Container cont, BUCommon.FreezeFile file, System.IO.Stream contents)
     { return uploadFileAsync(threadData, cont, file, contents).Result; }
 
     public async Task<BUCommon.FreezeFile> uploadFileAsync(object threadData, BUCommon.Container cont, BUCommon.FreezeFile file, System.IO.Stream contents)
     {
-      UploadData data = threadData as UploadData;
+      TransferData data = threadData as TransferData;
 
       DateTimeOffset dto = new DateTimeOffset(file.modified.ToUniversalTime());
       var millis = dto.ToUnixTimeMilliseconds();
@@ -325,11 +337,14 @@ b2_get_download_authorization
       return ff;
     }
 
-    public async Task<System.IO.Stream> downloadFileAsync(BUCommon.FreezeFile file)
+    public async Task<System.IO.Stream> downloadFileAsync(object data, BUCommon.FreezeFile file)
     {
+      TransferData td = data as TransferData;
       if (string.IsNullOrWhiteSpace(file.fileID)) { throw new ArgumentNullException("fileID"); }
 
-      var task = await _client.Files.DownloadById(file.fileID);
+      if (td.client == null) { _getDLAuth(td); }
+
+      var task = await td.client.Files.DownloadById(file.fileID);
       
       file.uploaded = task.UploadTimestampDate;
       file.storedHash = BUCommon.Hash.Create("SHA1", task.ContentSHA1);
@@ -346,18 +361,29 @@ b2_get_download_authorization
             }
         }
 
-      _cache.add(file);
       return new System.IO.MemoryStream(task.FileData);
     }
 
-    public System.IO.Stream downloadFile(BUCommon.FreezeFile file) { return downloadFileAsync(file).Result; }
+    public System.IO.Stream downloadFile(object data, BUCommon.FreezeFile file) { return downloadFileAsync(data, file).Result; }
 
-    private void _getULAuth(UploadData data, string bucketID)
+    private void _getULAuth(TransferData data, string bucketID)
     {
       var url = _client.Files.GetUploadUrl(bucketID).Result;
 
       data.url=url.UploadUrl;
       data.auth = url.AuthorizationToken;
+    }
+
+    private void _getDLAuth(TransferData data)
+    {
+      /* setup a new 'authorize' */
+      var opts = new B2Net.Models.B2Options
+        {
+          AccountId=_opts.AccountId
+          , ApplicationKey = _opts.ApplicationKey
+        };
+      data.client = new B2Client(opts);
+      var res = data.client.Authorize().Result;
     }
   }
 }

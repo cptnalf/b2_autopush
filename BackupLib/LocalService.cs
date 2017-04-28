@@ -59,9 +59,9 @@ namespace BackupLib
     public object threadStart() { return null; }
     public void threadStop(object data) { }
 
-    public Stream downloadFile(FreezeFile file) { return downloadFileAsync(file).Result; }
+    public Stream downloadFile(object data, FreezeFile file) { return downloadFileAsync(data, file).Result; }
 
-    public async Task<Stream> downloadFileAsync(FreezeFile file)
+    public async Task<Stream> downloadFileAsync(object data, FreezeFile file)
     {
       var fstrm = new FileStream(file.fileID, FileMode.Open, FileAccess.Read, FileShare.ReadWrite|FileShare.Delete);
       return await Task.Run(() => fstrm);
