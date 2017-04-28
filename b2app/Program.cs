@@ -4,15 +4,79 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using CommandLine;
 
 namespace b2app
 {
+  [CommandLine.Verb("accounts", HelpText ="List accounts")]
+  public class AccountsOpt { }
+
+  [CommandLine.Verb("authorize", HelpText ="Authorize an account")]
+  public class AuthOpt
+  {
+    [CommandLine.Option('a', Required=true, HelpText = "account name to use" )]
+    public string account {get;set;}
+  }
+
+  [CommandLine.Verb("containers", HelpText ="List containers in an account")]
+  public class ContOpt
+  {
+    [CommandLine.Option('a', Required=true, HelpText ="account name to use")]
+    public string account {get;set;}
+  }
+
+  [CommandLine.Verb("ls", HelpText ="list files in a container")]
+  public class LSOpt
+  {
+    [CommandLine.Option('a', Required=true,HelpText ="account to use")]
+    public string account {get;set;}
+
+    [CommandLine.Option(Required =true, HelpText ="Container to list")]
+    public string container {get;set;}
+
+    [CommandLine.Option('r', Default=false, HelpText ="query remote host only (skip cache)")]
+    public bool useremote {get;set;}
+
+    [CommandLine.Option('f', HelpText ="Regex filter for files")]
+    public string filter {get;set;}
+
+    [CommandLine.Option('v', Default=false, HelpText ="Get versions too")]
+    public bool versions {get;set;}
+  }
+
+  public class SyncOpts
+  {
+    [CommandLine.Option('a', Required =true, HelpText ="account to sync with")]
+    public string account{get;set;}
+
+    [CommandLine.Option('c', Required =true,HelpText ="container to place the files in")]
+    public string container{get;set;}
+    [CommandLine.Option('k', Required =true, HelpText ="path to keyfile (pushing to remote, need pub key)")]
+    public string keyfile {get;set;}
+
+    [CommandLine.Option('p', Required=true, HelpText ="root path to sync")]
+    public string pathroot {get;set;}
+
+    [CommandLine.Option('r', Default=false, HelpText ="query remote host only (skip cache)")]
+    public bool useremote {get;set;}
+  }
+
   class Program
   {
     static System.Text.RegularExpressions.Regex _CmdRE = new System.Text.RegularExpressions.Regex("^BackupLib.commands", System.Text.RegularExpressions.RegexOptions.Compiled);
     
     static void Main(string[] args)
     {
+      CommandLine.Parser.Default.ParseArguments<AccountsOpt,AuthOpt,LSOpt,SyncOpts>(args)
+        .MapResult(
+          (AccountsOpt o) => Actions.Accounts(o)
+          ,(AuthOpt o1) => { return 0;}
+          ,(ContOpt o4) => Actions.ListContainers(o4)
+          ,(LSOpt o2) => Actions.ListFiles(o2)
+          , (SyncOpts o3) => {return 0;}
+          ,(IEnumerable<Error> errs) => { foreach(var e in errs) { Console.WriteLine(e.Tag); } return 0; }
+          );
+      /*
       Console.WriteLine("options:");
       
       var asm = System.Reflection.Assembly.GetAssembly(typeof(BackupLib.AccountBuilder));
@@ -24,6 +88,7 @@ namespace b2app
           var cmd = o as BUCommon.ICommand;
           Console.WriteLine("\t{0}", cmd.helptext);
         }
+      */
 
       /*
        * load defaults:
