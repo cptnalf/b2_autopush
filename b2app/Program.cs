@@ -17,10 +17,10 @@ namespace b2app
       CommandLine.Parser.Default.ParseArguments<Options.AccountsOpt,Options.AuthOpt,Options.ContOpt,Options.LSOpt,Options.SyncOpts,Options.CopyOpts>(args)
         .MapResult(
           (Options.AccountsOpt o) => Actions.Accounts(o)
-          ,(Options.AuthOpt o1) => { return 0;}
+          ,(Options.AuthOpt o1) => Actions.Auth(o1)
           ,(Options.ContOpt o4) => Actions.ListContainers(o4)
           ,(Options.LSOpt o2) => Actions.ListFiles(o2)
-          , (Options.SyncOpts o3) => {return 0;}
+          , (Options.SyncOpts o3) => Actions.Sync(o3)
           , (Options.CopyOpts o5) => Actions.Copy(o5)
           ,(IEnumerable<Error> errs) => { foreach(var e in errs) { Console.WriteLine(e.Tag); } return 0; }
           );

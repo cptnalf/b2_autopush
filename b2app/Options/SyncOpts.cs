@@ -22,5 +22,11 @@ namespace b2app.Options
 
     [Option('n', Default=false, HelpText ="lists what would happen instead of doing things")]
     public bool dryrun {get;set;}
+
+    [Option('f', HelpText ="filter to sync only these files.")]
+    public string filterre {get;set;}
+
+    [Option('e', HelpText="exclude these files")]
+    public string excludere {get;set;}
   }
 }

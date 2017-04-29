@@ -37,6 +37,15 @@ namespace b2app
 
       return 0;
     }
+    internal static int Auth(Options.AuthOpt o)
+    {
+      _Load(o.account);
+      Console.WriteLine("account: {0}", acct.name);
+      (new BackupLib.commands.Authorize { account=acct, accounts=accts}).run();
+      _Save ();
+
+      return 0;
+    }
 
     internal static int ListContainers(Options.ContOpt o)
     {
@@ -73,6 +82,34 @@ namespace b2app
           foreach(var f in files.OrderBy(x => x.path))
             { Console.WriteLine("{0}, {1}", f.uploaded, f.path); }
         }
+      
+      _Save();
+      return 0;
+    }
+
+    internal static int Sync(Options.SyncOpts o)
+    {
+      _Load(o.account);
+      var cont = accts.filecache.containers.Where(x => x.accountID==acct.id && x.name == o.container).ToList();
+
+      var sync = new BackupLib.commands.Sync 
+        { 
+          noAction=o.dryrun
+          , account=acct
+          , cache=accts.filecache
+          , container=cont.FirstOrDefault()
+          , keyFile=o.keyfile
+          , pathRoot=o.pathroot
+          , useRemote=o.useremote
+          , progress=_PrintDiff
+          , filterRE=o.filterre
+          , excludeRE=o.excludere
+        };
+
+      Console.WriteLine("Account: {0}", acct.name);
+      Console.WriteLine("Container: {0}", sync.container.name);
+
+      sync.run();
       
       _Save();
       return 0;
