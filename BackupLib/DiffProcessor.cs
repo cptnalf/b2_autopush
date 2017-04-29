@@ -17,7 +17,7 @@ namespace BackupLib
 
   public enum RunType
   {
-    unknown
+    none
     ,upload
     ,download
   }
@@ -39,13 +39,15 @@ namespace BackupLib
     public BUCommon.Container container {get;set;}
     public string encKey {get;set;}
     public string root {get;set;}
+    public bool noAction {get;set;}
+    public RunType runType {get;set;}
 
     public DiffProcessor() { maxTasks=12; }
 
     public void add(FileDiff d) { _diffs.Add(d); }
     public void add(IEnumerable<FileDiff> ds) { _diffs.AddRange(ds); }
 
-    public void run(RunType rt)
+    public void run()
     {
       byte[] keyfile;
       {
@@ -60,6 +62,11 @@ namespace BackupLib
       }
 
       if (maxTasks <= 0 || maxTasks > 100) { maxTasks =0; }
+      if (noAction) 
+        {
+          maxTasks = 1;
+          runType = RunType.none;
+        }
 
       var service = account.service;
       var cache = service.fileCache;
@@ -73,7 +80,9 @@ namespace BackupLib
 
           var fe1 = new FileEncrypt(rsa);
           sr = null;
-          var td = service.threadStart();
+          object td = null;
+          if (!noAction)
+            { td = service.threadStart(); }
           return new TLocalData { fe=fe1, auth=td };
         }
         ,(x,pls,tl) =>
@@ -84,7 +93,7 @@ namespace BackupLib
           
           FileStream filestrm = null;
           try {
-            switch(rt)
+            switch(runType)
               {
               case RunType.upload: 
                 { 
@@ -137,6 +146,7 @@ namespace BackupLib
 
                   break; 
                 }
+              case RunType.none: { break; }
               }
           } 
           catch (Exception e)
@@ -146,7 +156,7 @@ namespace BackupLib
             }
           return tl;
         }
-        ,x => { service.threadStop(x.auth); }
+        ,x => { if (!noAction) { service.threadStop(x.auth); } }
         );
     }
   }

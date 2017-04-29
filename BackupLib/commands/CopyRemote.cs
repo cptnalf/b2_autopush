@@ -27,6 +27,9 @@ namespace BackupLib.commands
     public string fileRE {get;set;}
     public string key {get;set;}
 
+    public Action<FileDiff> progress {get;set;}
+    public bool noAction { get;set; }
+
     public void run()
     {
       var ll = new LocalLister();
@@ -34,7 +37,8 @@ namespace BackupLib.commands
 
       if (!string.IsNullOrWhiteSpace(fileRE))
         {
-          var re = new System.Text.RegularExpressions.Regex(fileRE, System.Text.RegularExpressions.RegexOptions.Compiled);
+          var re = new System.Text.RegularExpressions.Regex(fileRE
+            , System.Text.RegularExpressions.RegexOptions.Compiled| System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
           localfiles = localfiles.Where(x => re.IsMatch(x.path)).ToList();
         }
@@ -42,8 +46,12 @@ namespace BackupLib.commands
       var locdiffs = localfiles.Select(x => new FileDiff { local=x,remote=null,type= DiffType.created});
       var dp = new DiffProcessor { account=account, container=container, maxTasks=10, root=pathRoot, encKey=key};
 
+      dp.noAction = noAction;
+      dp.progressHandler = progress;
+      dp.runType = RunType.upload;
+
       dp.add(locdiffs);
-      dp.run(RunType.upload);
+      dp.run();
     }
   }
 }

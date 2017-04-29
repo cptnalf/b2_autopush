@@ -17,13 +17,19 @@ namespace BackupLib.commands
     public Account account {get;set;}
     public string destPath {get;set;}
     public string key {get;set;}
+    public bool noAction {get;set;}
+    public Action<FileDiff> progress {get;set;}
     
     public void run()
     {
-      
       var dp = new DiffProcessor { account=account, container=null, encKey=key, maxTasks=10, root=destPath};
+
+      dp.noAction = noAction;
+      dp.runType = RunType.download;
+      dp.progressHandler = progress;
+
       dp.add(new FileDiff{local=null, remote=file, type= DiffType.created});
-      dp.run(RunType.download);
+      dp.run();
     }
   }
 }

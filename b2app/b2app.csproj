@@ -51,6 +51,12 @@
   <ItemGroup>
     <Compile Include="Actions.cs" />
     <Compile Include="MersenneTwister.cs" />
+    <Compile Include="Options\AccountOptions.cs" />
+    <Compile Include="Options\AuthorizeOpts.cs" />
+    <Compile Include="Options\ContainerOpts.cs" />
+    <Compile Include="Options\CopyOpts.cs" />
+    <Compile Include="Options\FileListOpts.cs" />
+    <Compile Include="Options\SyncOpts.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

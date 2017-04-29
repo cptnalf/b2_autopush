@@ -21,6 +21,8 @@ namespace BackupLib.commands
     public Container container {get;set;}
     public string keyFile {get;set;}
     public string pathRoot {get;set;}
+    public bool noAction {get;set;}
+    public Action<FileDiff> progress {get;set;}
 
     /// <summary>contact remote for file status?</summary>
     public bool useRemote {get;set;}
@@ -38,16 +40,19 @@ namespace BackupLib.commands
           , maxTasks=10
           , root=pathRoot
           , encKey=keyFile
+          , noAction = noAction
+          , progressHandler=progress
+          , runType=RunType.upload
         };
 
       dp.add(cmp.Where(x => x.type == DiffType.created));
-      dp.run(RunType.upload);
+      dp.run();
 
       dp.add(cmp.Where(x => x.type == DiffType.updated));
-      dp.run(RunType.upload);
+      dp.run();
       
       dp.add(cmp.Where(x => x.type == DiffType.deleted));
-      dp.run(RunType.upload);
+      dp.run();
     }
   }
 }

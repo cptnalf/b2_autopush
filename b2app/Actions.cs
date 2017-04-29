@@ -25,7 +25,7 @@ namespace b2app
       BackupLib.AccountBuilder.Save(accts);
     }
     
-    internal static int Accounts(AccountsOpt o)
+    internal static int Accounts(Options.AccountsOpt o)
     {
       _Load(null);
       Console.WriteLine("Accounts:");
@@ -38,7 +38,7 @@ namespace b2app
       return 0;
     }
 
-    internal static int ListContainers(ContOpt o)
+    internal static int ListContainers(Options.ContOpt o)
     {
       _Load(o.account);
 
@@ -54,7 +54,7 @@ namespace b2app
       return 0;
     }
 
-    internal static int ListFiles(LSOpt o)
+    internal static int ListFiles(Options.LSOpt o)
     {
       _Load(o.account);
 
@@ -77,5 +77,65 @@ namespace b2app
       _Save();
       return 0;
     }
+
+    internal static int Copy(Options.CopyOpts o)
+    {
+      _Load(null);
+
+      var src = Options.CopyOpts.ParseLoc(accts, o.source);
+      var dest = Options.CopyOpts.ParseLoc(accts, o.dest);
+
+      if (src.cont == null) { Console.WriteLine("ERROR - source is unknown: {0}", o.source); return 1; }
+      if (dest.cont == null) { Console.WriteLine("ERROR - dest is unknown: {0}", o.dest); return 1; }
+
+      if (src.acct == null && dest.acct == null)
+        { Console.WriteLine("ERROR - use copy instead of this program (both are local)."); return 1; }
+      
+      if (src.acct != null && dest.acct != null)
+        { Console.WriteLine("ERROR - remote to remote copying is not yet supported."); return 1; }
+
+      if (dest.acct != null)
+        {
+          var crm = new BackupLib.commands.CopyRemote
+              {
+                 account=dest.acct
+                 , cache=accts.filecache
+                 , container=dest.cont
+                 , fileRE=o.filterRE
+                 , key=o.key
+                 , pathRoot=src.cont.id
+                 , noAction=o.dryrun
+                 , progress= _PrintDiff
+              };
+          crm.run();
+        }
+      if (src.acct != null && !string.IsNullOrWhiteSpace(o.filterRE))
+        {
+          var filterre = new System.Text.RegularExpressions.Regex(o.filterRE
+          , System.Text.RegularExpressions.RegexOptions.Compiled| System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+          var files = accts.filecache.getContainer(src.acct.id, src.cont.id, null).Where(x => filterre.IsMatch(x.path)).ToList();
+
+          if (files.Count > 10) { Console.WriteLine("Limited!"); return 1; }
+          var cl = new BackupLib.commands.CopyLocal 
+            { 
+              account=src.acct
+              , key=o.key
+              , destPath=dest.cont.id
+              , file=null
+              , noAction=o.dryrun
+              , progress= _PrintDiff
+            };
+          foreach(var f in files)
+            {
+              cl.file=f;
+              cl.run();
+            }
+        }
+      
+      return 0;
+    }
+
+    private static void _PrintDiff(BackupLib.FileDiff x)
+    { Console.WriteLine("{0} - {1}", x.type, (x.local != null ? x.local.path : x.remote.path)); }
   }
 }
