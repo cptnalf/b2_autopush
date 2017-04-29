@@ -166,6 +166,7 @@ namespace BackupLib
         }
         ,x => { if (!noAction) { service.threadStop(x.auth); } }
         );
+      _diffs.Clear();
     }
   }
 }
