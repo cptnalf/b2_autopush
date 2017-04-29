@@ -14,7 +14,7 @@ namespace b2app
     
     static void Main(string[] args)
     {
-      CommandLine.Parser.Default.ParseArguments<Options.AccountsOpt,Options.AuthOpt,Options.LSOpt,Options.SyncOpts,Options.CopyOpts>(args)
+      CommandLine.Parser.Default.ParseArguments<Options.AccountsOpt,Options.AuthOpt,Options.ContOpt,Options.LSOpt,Options.SyncOpts,Options.CopyOpts>(args)
         .MapResult(
           (Options.AccountsOpt o) => Actions.Accounts(o)
           ,(Options.AuthOpt o1) => { return 0;}
