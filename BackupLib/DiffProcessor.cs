@@ -108,12 +108,18 @@ namespace BackupLib
                   var ff = service.uploadFile(tl.auth, container, x.local, memstrm);
                   memstrm.Dispose();
                   memstrm = null;
-                  lock(cache) 
+
+                  if (ff == null)
+                    { errorHandler?.Invoke(x, new Exception("Failed to proces!")); }
+                  else 
                     {
-                      cache.add(x.local);
-                      cache.add(ff);
+                      lock(cache) 
+                        {
+                          cache.add(x.local);
+                          cache.add(ff);
+                        }
                     }
-                  break; 
+                   break; 
                 }
               case RunType.download: 
                 {
@@ -152,7 +158,9 @@ namespace BackupLib
           catch (Exception e)
             {
               errorHandler?.Invoke(x,e);
-              throw new ArgumentException("Error processing file diff item.", e);
+              throw new ArgumentException(string.Format("Error processing file diff item. {0} - {1}", x.type
+                , (x.local != null ? x.local.path : x.remote.path))
+                , e);
             }
           return tl;
         }

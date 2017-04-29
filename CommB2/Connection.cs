@@ -287,10 +287,33 @@ b2_get_download_authorization
                     res = await _client.Files.Upload(bytes, file.path, cont.id, argdic);
                     iserr = false;
                   }
+                  catch(System.AggregateException ag)
+                    {
+                      var e1 = ag.InnerExceptions.Where(x => x is System.IO.IOException || x is System.Net.Http.HttpRequestException);
+                      if (e1.Any())
+                        {
+                          /* broken pipe, or other network issue
+                           * ,assume it's on the other end and try another url.
+                           */
+                          data.auth = null;
+                          delay = false;
+                          break;
+                        }
+                    }
                   catch(B2Net.B2Exception be1)
                     {
                       if (be1.status == "503" && pausetime < maxDelay) 
                         { pausetime = pausetime * 2; }
+                    }
+                  catch (Exception e)
+                    {
+                      if (e is System.IO.IOException || e is System.Net.Http.HttpRequestException)
+                        {
+                          data.auth = null;
+                          delay = false;
+                          break;
+                        }
+                      else { throw new Exception("unexpected error", e); }
                     }
 
                   if (! iserr) { break; }
@@ -301,18 +324,37 @@ b2_get_download_authorization
               delay = false;
             }
 
-          if (res == null)
+          if (res == null && data.auth != null)
             {
               try {
                 res = await _client.Files.Upload(bytes, file.path, cont.id, argdic);
                 }
+              catch(System.AggregateException ag)
+                {
+                  var e1 = ag.InnerExceptions.Where(x => x is System.IO.IOException || x is System.Net.Http.HttpRequestException);
+                  if (e1.Any())
+                    {
+                      /* broken pipe, or other network issue
+                       * ,assume it's on the other end and try another url.
+                       */
+                      data.auth = null;
+                    }
+                }
               catch (B2Net.B2Exception be)
                 {
-                  if (be.status == "401") { data.auth = null; }
-                  else if (be.status == "408" || be.status == "429") 
+                  if (be.status == "401" || be.status == "503") { data.auth = null; }
+                  else if (be.status == "408" || be.status == "429" ) 
                     { delay = true; pausetime = 1; }
                   else
                     { throw new Exception("Broken.", be); }
+                }
+              catch (Exception e)
+                {
+                  if (e is System.IO.IOException || e is System.Net.Http.HttpRequestException)
+                    {
+                      data.auth = null;
+                    }
+                  else { throw new Exception("unexpected error", e); }
                 }
             }
 
@@ -333,7 +375,7 @@ b2_get_download_authorization
               break;
             }
         }
-
+      
       return ff;
     }
 
