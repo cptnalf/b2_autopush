@@ -6,28 +6,29 @@ using System.Threading.Tasks;
 
 namespace b2app
 {
-  public class Actions
-  {
-    static BUCommon.AccountList accts;
-    static BUCommon.Account acct;
+  using System.Text.RegularExpressions;
 
-    static void _Load(string account)
+  public abstract class BackupCmd
+  {
+    public abstract int run(BUCommon.AccountList accts);
+
+    protected BUCommon.Account _getAcct(BUCommon.AccountList accts, string account)
     {
-      accts = BackupLib.AccountBuilder.BuildAccounts();
-      
+      BUCommon.Account acct = null;
       if (!string.IsNullOrWhiteSpace(account))
         {
           acct = accts.Where(x => x.name == account).FirstOrDefault();
         }
+      return acct;
     }
-    static void _Save()
+  }
+
+  public class Accounts : BackupCmd
+  {
+    public Accounts(Options.AccountsOpt o) { }
+
+    public override int run(BUCommon.AccountList accts)
     {
-      BackupLib.AccountBuilder.Save(accts);
-    }
-    
-    internal static int Accounts(Options.AccountsOpt o)
-    {
-      _Load(null);
       Console.WriteLine("Accounts:");
 
       foreach(var acc in accts)
@@ -37,142 +38,234 @@ namespace b2app
 
       return 0;
     }
-    internal static int Auth(Options.AuthOpt o)
+  }
+
+  public class Auth : BackupCmd
+  {
+    private string _acctname;
+    public Auth(Options.AuthOpt o)
     {
-      _Load(o.account);
+      _acctname = o.account;
+    }
+
+    public override int run(BUCommon.AccountList accounts)
+    {
+      var acct = _getAcct(accounts, _acctname);
+
       Console.WriteLine("account: {0}", acct.name);
-      (new BackupLib.commands.Authorize { account=acct, accounts=accts}).run();
-      _Save ();
+      (new BackupLib.commands.Authorize 
+        { 
+          account=acct
+          , accounts=accounts
+        }).run();
 
       return 0;
     }
+  }
 
-    internal static int ListContainers(Options.ContOpt o)
+  public class ListContainers : BackupCmd
+  {
+    private string _acct;
+    public ListContainers(Options.ContOpt o) { _acct = o.account; }
+
+    public override int run(BUCommon.AccountList accounts)
     {
-      _Load(o.account);
-
-      var conts = new BackupLib.commands.Containers { account=acct, cache=accts.filecache};
+      var acct = _getAcct(accounts, _acct);
+      var conts = new BackupLib.commands.Containers { account=acct, cache=accounts.filecache};
       conts.run();
-      _Save();
-      var cs = accts.filecache.getContainers(acct.id);
 
+      var cs = accounts.filecache.getContainers(acct.id);
       Console.WriteLine("Account: {0}", acct.name);
       foreach(var c in cs)
         { Console.WriteLine("{0} - {1}", c.name, c.type); }
 
       return 0;
     }
+  }
 
-    internal static int ListFiles(Options.LSOpt o)
+  public class ListFiles : BackupCmd
+  {
+    private Options.LSOpt _opts;        
+    public ListFiles(Options.LSOpt o)  { _opts = o; }
+
+    public override int run(BUCommon.AccountList accounts)
     {
-      _Load(o.account);
-
-      var cont = accts.filecache.containers.Where(x => x.accountID==acct.id && x.name == o.container).ToList();
-
-      var lsf = new BackupLib.commands.FileList { account=acct, cache=accts.filecache, versions=o.versions, useRemote=o.useremote, pathRE=o.filter };
+      var acct = _getAcct(accounts, _opts.account);
+      var cmd = new BackupLib.commands.FileList 
+        { 
+          account=acct
+          , cache=accounts.filecache
+          , versions=_opts.versions
+          , useRemote=_opts.useremote
+          , pathRE=_opts.filter 
+        };
+    
+      var containers = accounts.filecache.containers
+          .Where(x => x.accountID==acct.id && x.name == _opts.container)
+          .ToList();
 
       Console.WriteLine("Account: {0}", acct.name);
-      foreach(var c in cont)
+      foreach(var c in containers)
         {
-          lsf.container=c;
-          var files = lsf.run();
+          cmd.container=c;
+          var files = cmd.run();
 
           Console.WriteLine();
           Console.WriteLine("Container: {0}", c.name);
           foreach(var f in files.OrderBy(x => x.path))
             { Console.WriteLine("{0}, {1}", f.uploaded, f.path); }
         }
-      
-      _Save();
+
       return 0;
     }
+  }
 
-    internal static int Sync(Options.SyncOpts o)
+  public abstract class ProgBackupCmd : BackupCmd
+  {
+    protected void _printDiff(BackupLib.FileDiff x)
+    { Console.WriteLine("{0} - {1}", x.type, (x.local != null ? x.local.path : x.remote.path)); }
+
+    protected void _printExcept(BackupLib.FileDiff x, Exception e)
+    { }
+  }
+
+  public class Sync : ProgBackupCmd
+  {
+    private Options.SyncOpts _opts;
+
+    public Sync(Options.SyncOpts o) { _opts = o; }
+
+    public override int run(BUCommon.AccountList accounts)
     {
-      _Load(o.account);
-      var cont = accts.filecache.containers.Where(x => x.accountID==acct.id && x.name == o.container).ToList();
+      var account = _getAcct(accounts,_opts.account); 
+      var cont = accounts.filecache.containers
+        .Where(x => x.accountID==account.id && x.name == _opts.container)
+        .ToList();
 
-      var sync = new BackupLib.commands.Sync 
+      var cmd = new BackupLib.commands.Sync 
         { 
-          noAction=o.dryrun
-          , account=acct
-          , cache=accts.filecache
+            account=account
+          , cache=accounts.filecache
           , container=cont.FirstOrDefault()
-          , keyFile=o.keyfile
-          , pathRoot=o.pathroot
-          , useRemote=o.useremote
-          , progress=_PrintDiff
-          , filterRE=o.filterre
-          , excludeRE=o.excludere
+          , progress=_printDiff
+          , excepts = _printExcept
+
+          ,noAction=_opts.dryrun
+          , keyFile=_opts.keyfile
+          , pathRoot=_opts.pathroot
+          , useRemote=_opts.useremote
+          , privateKey=_opts.privateKey
+          , filterRE=_opts.filterre
+          , excludeRE=_opts.excludere
+          ,maxTasks = _opts.maxTasks
+          ,checksum = _opts.cksum
         };
 
-      Console.WriteLine("Account: {0}", acct.name);
-      Console.WriteLine("Container: {0}", sync.container.name);
+      Console.WriteLine("Account: {0}", account.name);
+      Console.WriteLine("Container: {0}", cmd.container.name);
 
-      sync.run();
+      cmd.run();
       
-      _Save();
       return 0;
     }
+  }
 
-    internal static int Copy(Options.CopyOpts o)
+  public class Copy : ProgBackupCmd
+  {
+    internal class CopyLoc
     {
-      _Load(null);
+      public BUCommon.Container cont {get;set;}
+      public BUCommon.Account acct {get;set;}
+    }
 
-      var src = Options.CopyOpts.ParseLoc(accts, o.source);
-      var dest = Options.CopyOpts.ParseLoc(accts, o.dest);
+    private Options.CopyOpts _opts;
+    public Copy(Options.CopyOpts o) { _opts = o; }
 
-      if (src.cont == null) { Console.WriteLine("ERROR - source is unknown: {0}", o.source); return 1; }
-      if (dest.cont == null) { Console.WriteLine("ERROR - dest is unknown: {0}", o.dest); return 1; }
+    public override int run(BUCommon.AccountList accounts)
+    {
+      var src = _ParseLoc(accounts, _opts.source);
+      var dest = _ParseLoc(accounts, _opts.dest);
+
+      if (src.cont == null) { return _err("ERROR - source is unknown: {0}", _opts.source); }
+      if (dest.cont == null) { return _err("ERROR - dest is unknown: {0}", _opts.dest); }
 
       if (src.acct == null && dest.acct == null)
-        { Console.WriteLine("ERROR - use copy instead of this program (both are local)."); return 1; }
+        { return _err("ERROR - use copy instead of this program (both are local)."); }
       
       if (src.acct != null && dest.acct != null)
-        { Console.WriteLine("ERROR - remote to remote copying is not yet supported."); return 1; }
+        { return _err("ERROR - remote to remote copying is not yet supported."); }
 
+      /* these options should be mutually exclusive. */
       if (dest.acct != null)
         {
           var crm = new BackupLib.commands.CopyRemote
               {
-                 account=dest.acct
-                 , cache=accts.filecache
-                 , container=dest.cont
-                 , fileRE=o.filterRE
-                 , key=o.key
-                 , pathRoot=src.cont.id
-                 , noAction=o.dryrun
-                 , progress= _PrintDiff
+                  cache=accounts.filecache
+                  , account=dest.acct
+                  , container=dest.cont
+                  , pathRoot=src.cont.id
+
+                  , progress= _printDiff
+
+                  , fileRE=_opts.filterRE
+                  , key=_opts.key
+                  , noAction=_opts.dryrun
               };
           crm.run();
         }
-      if (src.acct != null && !string.IsNullOrWhiteSpace(o.filterRE))
-        {
-          var filterre = new System.Text.RegularExpressions.Regex(o.filterRE
-          , System.Text.RegularExpressions.RegexOptions.Compiled| System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-          var files = accts.filecache.getContainer(src.acct.id, src.cont.id, null).Where(x => filterre.IsMatch(x.path)).ToList();
 
-          if (files.Count > 10) { Console.WriteLine("Limited!"); return 1; }
+      if (src.acct != null && !string.IsNullOrWhiteSpace(_opts.filterRE))
+        {
           var cl = new BackupLib.commands.CopyLocal 
             { 
               account=src.acct
-              , key=o.key
               , destPath=dest.cont.id
-              , file=null
-              , noAction=o.dryrun
-              , progress= _PrintDiff
+              , filterre = _opts.filterRE
+              , key=_opts.key
+              , noAction=_opts.dryrun
+              , progress= _printDiff
+              , errors = _printExcept
             };
-          foreach(var f in files)
-            {
-              cl.file=f;
-              cl.run();
-            }
+          cl.run();
         }
       
       return 0;
     }
 
-    private static void _PrintDiff(BackupLib.FileDiff x)
-    { Console.WriteLine("{0} - {1}", x.type, (x.local != null ? x.local.path : x.remote.path)); }
+    private CopyLoc _ParseLoc(BUCommon.AccountList accts, string loc)
+    {
+      CopyLoc l = new CopyLoc();
+
+      if (System.IO.Directory.Exists(loc)) 
+        { l.cont = new BUCommon.Container { accountID=0, id=loc, name=loc, type="LOCAL"}; }
+      else
+        {
+          var parts = loc.Split(':');
+          if (parts != null && parts.Length > 1)
+            {
+              if (parts[0].Length == 1) 
+                { 
+                  return l;
+                }
+
+              var acct = accts.accounts.Where(x => x.name == parts[0]).FirstOrDefault();
+              if (acct != null)
+                {
+                  var cont = accts.filecache.containers.Where(x => x.accountID == acct.id && x.name== parts[1]).FirstOrDefault();
+
+                  if (cont != null)
+                    { l.acct=acct; l.cont=cont; }
+                }
+            }
+        }
+
+      return l;
+    }
+
+    private int _err(string format, params object[] args)
+    {
+      Console.WriteLine(format, args);
+      return 1;
+    }
   }
 }

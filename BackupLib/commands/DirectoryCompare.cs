@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 namespace BackupLib.commands
 {
+  using System.Text.RegularExpressions;
+  
   public class DirectoryCompare
   {
     public BUCommon.FileCache cache {get;set;}
@@ -14,8 +16,17 @@ namespace BackupLib.commands
     public string pathRoot {get;set;}
     public bool useRemote {get;set;}
 
+    public string privateKey {get;set;}
+    public bool useHash {get;set;}
+
+    public string filter {get;set;}
+    public string exclude {get;set;}
+
     public IReadOnlyList<FileDiff> run()
     {
+      Regex reex = null;
+      Regex re = null;
+
       var ll = new LocalLister();
 
       var localfiles = ll.getList(pathRoot);
@@ -25,7 +36,28 @@ namespace BackupLib.commands
           { account=account, cache=cache, container=container, versions=false, useRemote=useRemote, pathRE=null }
          ).run();
 
+      if (!string.IsNullOrWhiteSpace(filter)) 
+        { 
+          re = new Regex(filter, RegexOptions.Compiled| RegexOptions.IgnoreCase); 
+          localfiles = localfiles.Where(x => re.IsMatch(x.path)).ToList();
+          remoteFiles = remoteFiles.Where(x => re.IsMatch(x.path)).ToList();
+        }
+      
+      if (!string.IsNullOrWhiteSpace(exclude))
+        {
+          reex = new Regex(exclude, RegexOptions.Compiled| RegexOptions.IgnoreCase);
+          localfiles = localfiles.Where(x => !reex.IsMatch(x.path)).ToList();
+          remoteFiles = remoteFiles.Where(x => !reex.IsMatch(x.path)).ToList();
+        }
+      
       var dd = new DirDiff();
+      if (useHash)
+        {
+          dd.usehash = true;
+          dd.privateKey = privateKey;
+          dd.pathRoot = pathRoot;
+        }
+
       var diffs = dd.compare(localfiles, remoteFiles);
 
       /* filter out unknowns, sames */

@@ -119,9 +119,12 @@ namespace TestBackupLib
       var cl = new BackupLib.commands.CopyLocal
         {
           account=acct
-          , file=rmt
           , key= privateKey
           , destPath=testDest
+          , cont=cont
+          , maxTasks=1
+          , noAction= true
+          , filterre=rmt.path
         };
 
       System.IO.Directory.CreateDirectory(cl.destPath);

@@ -59,8 +59,13 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UnitTest1.cs" />
     <Compile Include="UnitTest2.cs" />
+    <Compile Include="Hashes.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\B2.NET\src\B2Net.csproj">
+      <Project>{e178ff84-e6b4-4c08-8b2f-e190a6bcfe4a}</Project>
+      <Name>B2Net</Name>
+    </ProjectReference>
     <ProjectReference Include="..\BackupLib\BackupLib.csproj">
       <Project>{2f4abbb6-2580-4475-871c-4585f5d32c07}</Project>
       <Name>BackupLib</Name>

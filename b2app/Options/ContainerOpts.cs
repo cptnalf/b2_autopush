@@ -1,8 +1,9 @@
 ﻿using System;
-using CommandLine;
 
 namespace b2app.Options
 {
+  using CommandLine;
+  
   [Verb("containers", HelpText ="List containers in an account")]
   public class ContOpt
   {

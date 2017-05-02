@@ -10,18 +10,52 @@ namespace b2app
 {
   class Program
   {
-    static System.Text.RegularExpressions.Regex _CmdRE = new System.Text.RegularExpressions.Regex("^BackupLib.commands", System.Text.RegularExpressions.RegexOptions.Compiled);
-    
+    static int Run(BackupCmd a)
+    {
+      int res = 1;
+      var accts = BackupLib.AccountBuilder.BuildAccounts();
+
+      try { res = a.run(accts); }
+      catch(Exception e)
+        {
+          var x = e;
+          while(x != null)
+            {
+              _print(e);
+              x = e.InnerException;
+            }
+
+          res = 1;
+        }
+      finally
+        {
+          BackupLib.AccountBuilder.Save(accts);
+        }
+
+      return res;
+    }
+
+    static void _print(Exception e)
+    {
+      Console.WriteLine(e.GetType().Name);
+      Console.WriteLine(e.Message);
+      Console.WriteLine(e.Source);
+      Console.WriteLine(e.TargetSite.Name);
+      Console.WriteLine(e.StackTrace);
+      Console.WriteLine("----------------------------");
+      if (e.InnerException != null) { Console.WriteLine("inner exception:"); }
+    }
+
     static void Main(string[] args)
     {
       CommandLine.Parser.Default.ParseArguments<Options.AccountsOpt,Options.AuthOpt,Options.ContOpt,Options.LSOpt,Options.SyncOpts,Options.CopyOpts>(args)
         .MapResult(
-          (Options.AccountsOpt o) => Actions.Accounts(o)
-          ,(Options.AuthOpt o1) => Actions.Auth(o1)
-          ,(Options.ContOpt o4) => Actions.ListContainers(o4)
-          ,(Options.LSOpt o2) => Actions.ListFiles(o2)
-          , (Options.SyncOpts o3) => Actions.Sync(o3)
-          , (Options.CopyOpts o5) => Actions.Copy(o5)
+          (Options.AccountsOpt o) => Run(new Accounts(o))
+          ,(Options.AuthOpt o1) => Run(new Auth(o1))
+          ,(Options.ContOpt o4) => Run(new ListContainers(o4))
+          ,(Options.LSOpt o2) => Run(new ListFiles(o2))
+          , (Options.SyncOpts o3) => Run(new Sync(o3))
+          , (Options.CopyOpts o5) => Run(new Copy(o5))
           ,(IEnumerable<Error> errs) => { foreach(var e in errs) { Console.WriteLine(e.Tag); } return 0; }
           );
       /*

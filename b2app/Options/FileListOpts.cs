@@ -1,8 +1,9 @@
 ﻿using System;
-using CommandLine;
 
 namespace b2app.Options
 {
+  using CommandLine;
+
   [Verb("ls", HelpText ="list files in a container")]
   public class LSOpt
   {

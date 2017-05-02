@@ -24,8 +24,12 @@ namespace BackupLib.commands
     public string pathRoot {get;set;}
     public bool noAction {get;set;}
     public Action<FileDiff> progress {get;set;}
+    public Action<FileDiff,Exception> excepts {get;set;}
     public string filterRE {get;set;}
     public string excludeRE {get;set;}
+    public int maxTasks {get;set;}
+    public bool checksum {get;set;}
+    public string privateKey {get;set;}
 
     /// <summary>contact remote for file status?</summary>
     public bool useRemote {get;set;}
@@ -33,7 +37,17 @@ namespace BackupLib.commands
     public void run()
     {
       var cmp = (new DirectoryCompare 
-        { account=account, cache=cache, container=container, pathRoot=pathRoot, useRemote=useRemote })
+        { 
+          account=account
+          , cache=cache
+          , container=container
+          , pathRoot=pathRoot
+          , useRemote=useRemote 
+          , filter = filterRE
+          ,exclude = excludeRE
+          ,useHash=checksum
+          , privateKey=privateKey
+          })
         .run();
       
       if (!string.IsNullOrWhiteSpace(filterRE)) 
@@ -53,11 +67,12 @@ namespace BackupLib.commands
         { 
           container=container
           , account=account
-          , maxTasks=10
+          , maxTasks=maxTasks
           , root=pathRoot
           , encKey=keyFile
           , noAction = noAction
           , progressHandler=progress
+          , errorHandler=excepts
           , runType=RunType.upload
         };
 

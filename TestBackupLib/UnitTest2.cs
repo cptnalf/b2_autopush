@@ -111,13 +111,11 @@ namespace TestBackupLib
 
       BUCommon.FreezeFile rmt = null;
 
-      {
-        var cont = accts.filecache.containers[0];
-        if (cont.files.Count > 0)
-          {
-            rmt = cont.files[0];
-          }
-      }
+      var cont = accts.filecache.containers[0];
+      if (cont.files.Count > 0)
+        {
+          rmt = cont.files[0];
+        }
 
       Assert.IsNotNull(rmt);
       Assert.IsNotNull(rmt.fileID);
@@ -125,7 +123,9 @@ namespace TestBackupLib
       var cl = new BackupLib.commands.CopyLocal
         {
           account=acct
-          , file=rmt
+          , cont=cont
+          , noAction=true
+          , filterre=rmt.path
           , key= @"c:\tmp\id_rsa_1"
           , destPath=@"c:\tmp\photos1"
         };

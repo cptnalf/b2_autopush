@@ -8,7 +8,6 @@ namespace BUCommon
 {
   public interface ICommand
   {
-    string helptext {get;}
     void run();
   }
 }

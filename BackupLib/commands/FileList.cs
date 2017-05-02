@@ -12,6 +12,7 @@ namespace BackupLib.commands
     public BUCommon.Account account {get;set;}
     public BUCommon.Container container {get;set;}
     public string pathRE {get;set;}
+    public string privateKey {get;set;}
 
     public bool useRemote {get;set;}
     /* i'm not really sure why this wouldn't always be true.
@@ -41,7 +42,7 @@ namespace BackupLib.commands
           var re = new System.Text.RegularExpressions.Regex(pathRE, System.Text.RegularExpressions.RegexOptions.Compiled);
           files = files.Where(x => re.IsMatch(x.path));
         }
-
+      
       return files.ToList();
     }
 
