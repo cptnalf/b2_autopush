@@ -25,6 +25,11 @@ namespace BUCommon
     public string fileID {get;set; }
 
     public string serviceInfo {get;set;}
+    public string enchash {get;set;}
+   
+    /// <summary>this is the hash of the local contents as they were sent to the provider.</summary>
+    [XmlIgnore]
+    public Hash lastHash {get;set;}
 
     /// <summary>the container this file belongs to (null if not on a provider)</summary>
     [XmlIgnore]

@@ -105,7 +105,13 @@ namespace BackupLib
                   x.local.localHash = hash;
                   
                   var memstrm = tl.fe.encrypt(filestrm);
-                  var ff = service.uploadFile(tl.auth, container, x.local, memstrm);
+                  memstrm.Seek(0, System.IO.SeekOrigin.Begin);
+                  x.local.localHash = tl.fe.hashContents("SHA1", memstrm);
+                  memstrm.Seek(0, System.IO.SeekOrigin.Begin);
+
+                  byte[] buf = tl.fe.encBytes(x.local.localHash.raw);
+                  var b64 = Convert.ToBase64String(buf);
+                  var ff = service.uploadFile(tl.auth, container, x.local, memstrm, b64);
                   memstrm.Dispose();
                   memstrm = null;
 
@@ -113,6 +119,7 @@ namespace BackupLib
                     { errorHandler?.Invoke(x, new Exception("Failed to proces!")); }
                   else 
                     {
+                      ff.localHash = x.local.localHash;
                       lock(cache) 
                         {
                           cache.add(x.local);

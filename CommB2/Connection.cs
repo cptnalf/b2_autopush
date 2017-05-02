@@ -59,6 +59,9 @@ b2_get_download_authorization
   /// </summary>
   public class Connection : BUCommon.IFileSvc
   {
+    private const string LAST_MOD_MILLIS = "src_last_modified_millis";
+    private const string LOCALHASH = "saa_localhash";
+
     internal class TransferData
     {
       public string url {get;set;} 
@@ -183,10 +186,17 @@ b2_get_download_authorization
                path = f.FileName
                , uploaded = f.UploadTimestampDate
                , fileID = f.FileId
-               , storedHash = BUCommon.Hash.Create("SHA1", f.ContentSHA1)
+               , storedHash = BUCommon.Hash.FromString("SHA1", f.ContentSHA1)
                , mimeType = f.ContentType
+               , serviceInfo = f.Action
                ,container = cont
               };
+
+            if (f.FileInfo.ContainsKey(LAST_MOD_MILLIS))
+              { }
+            if (f.FileInfo.ContainsKey(LOCALHASH))
+              { ff.enchash = f.FileInfo[LOCALHASH]; }
+
             list.Add(ff);
           }
         startfile = files.NextFileName;
@@ -221,10 +231,16 @@ b2_get_download_authorization
                ,uploaded=f.UploadTimestampDate
                ,mimeType=f.ContentType
                ,fileID=f.FileId
-               ,storedHash = BUCommon.Hash.Create("SHA1", f.ContentSHA1)
+               ,storedHash = BUCommon.Hash.FromString("SHA1", f.ContentSHA1)
                ,container=cont
                ,serviceInfo=f.Action
               };
+
+            if (f.FileInfo.ContainsKey(LAST_MOD_MILLIS))
+              { }
+            if (f.FileInfo.ContainsKey(LOCALHASH))
+              { ff.enchash = f.FileInfo[LOCALHASH]; }
+
             list.Add(ff);
           }
       } while (startfile != null);
@@ -253,17 +269,18 @@ b2_get_download_authorization
         { if (d1.client != null) { d1.client = null; } }
     }
 
-    public BUCommon.FreezeFile uploadFile(object threadData, BUCommon.Container cont, BUCommon.FreezeFile file, System.IO.Stream contents)
-    { return uploadFileAsync(threadData, cont, file, contents).Result; }
+    public BUCommon.FreezeFile uploadFile(object threadData, BUCommon.Container cont, BUCommon.FreezeFile file, System.IO.Stream contents, string enchash)
+    { return uploadFileAsync(threadData, cont, file, contents, enchash).Result; }
 
-    public async Task<BUCommon.FreezeFile> uploadFileAsync(object threadData, BUCommon.Container cont, BUCommon.FreezeFile file, System.IO.Stream contents)
+    public async Task<BUCommon.FreezeFile> uploadFileAsync(object threadData, BUCommon.Container cont, BUCommon.FreezeFile file, System.IO.Stream contents, string enchash)
     {
       TransferData data = threadData as TransferData;
 
       DateTimeOffset dto = new DateTimeOffset(file.modified.ToUniversalTime());
       var millis = dto.ToUnixTimeMilliseconds();
       var argdic = new Dictionary<string,string>();
-      argdic.Add("src_last_modified_millis", millis.ToString());
+      argdic.Add(LAST_MOD_MILLIS, millis.ToString());
+      argdic.Add("localhash", enchash);
 
       byte[] bytes = await BUCommon.IOUtils.ReadStream(contents);
 
@@ -366,7 +383,7 @@ b2_get_download_authorization
                   fileID=res.FileId
                   , container=cont
                   , uploaded = res.UploadTimestampDate
-                  , storedHash = BUCommon.Hash.Create("SHA1", res.ContentSHA1)
+                  , storedHash = BUCommon.Hash.FromString("SHA1", res.ContentSHA1)
                   , mimeType = res.ContentType
                   , path = res.FileName
                   , modified =file.modified
@@ -389,7 +406,7 @@ b2_get_download_authorization
       var task = await td.client.Files.DownloadById(file.fileID);
       
       file.uploaded = task.UploadTimestampDate;
-      file.storedHash = BUCommon.Hash.Create("SHA1", task.ContentSHA1);
+      file.storedHash = BUCommon.Hash.FromString("SHA1", task.ContentSHA1);
       file.mimeType = task.ContentType;
       file.path = task.FileName;
       if( task.FileInfo != null)

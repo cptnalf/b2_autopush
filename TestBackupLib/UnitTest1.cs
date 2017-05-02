@@ -82,7 +82,7 @@ namespace TestBackupLib
 
       DateTime now = DateTime.Now;
       var td = acct.service.threadStart();
-      acct.service.uploadFile(td, cont, ff, encstrm);
+      acct.service.uploadFile(td, cont, ff, encstrm, null);
       acct.service.threadStop(td);
       Assert.AreEqual(2017,ff.uploaded.Year);
       Assert.AreEqual(now.Month, ff.uploaded.Month);

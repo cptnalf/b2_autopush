@@ -67,10 +67,10 @@ namespace BackupLib
       return await Task.Run(() => fstrm);
     }
 
-    public FreezeFile uploadFile(object threadData, Container container, FreezeFile file, Stream contents)
-    { return uploadFileAsync(threadData, container, file, contents).Result; }
+    public FreezeFile uploadFile(object threadData, Container container, FreezeFile file, Stream contents, string enchash)
+    { return uploadFileAsync(threadData, container, file, contents, enchash).Result; }
 
-    public async Task<FreezeFile> uploadFileAsync(object threadData, Container container, FreezeFile file, Stream contents)
+    public async Task<FreezeFile> uploadFileAsync(object threadData, Container container, FreezeFile file, Stream contents, string enchash)
     {
       var path = string.Empty;
       if (string.IsNullOrWhiteSpace(file.fileID)) 

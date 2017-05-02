@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace BUCommon
 {
@@ -13,9 +14,20 @@ namespace BUCommon
       return res;
     }
     
-    public static Hash Create(string type, string hash)
+    public static Hash FromString(string type, string hash)
     {
-      var res = new Hash { type=type, base64=hash, raw=Convert.FromBase64String(hash) };
+      byte[] bytes = Enumerable
+        .Range(0, hash.Length)
+        .Where(x => x % 2 == 0)
+        .Select(x => Convert.ToByte(hash.Substring(x, 2), 16))
+        .ToArray();
+      
+      return new Hash { type=type, base64=Convert.ToBase64String(bytes), raw=bytes};
+    }
+
+    public static Hash Create(string type, string hash64)
+    {
+      var res = new Hash { type=type, base64=hash64, raw=Convert.FromBase64String(hash64) };
       return res;
     }
 

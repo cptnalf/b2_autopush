@@ -137,6 +137,39 @@ namespace BackupLib
     }
 
     /// <summary>
+    /// computes the hash of the given stream.
+    /// </summary>
+    /// <param name="strm"></param>
+    /// <returns></returns>
+    public BUCommon.Hash hashContents(string hashAlgo, Stream strm)
+    {
+      var algo = HashAlgorithmName.MD5;
+      if (hashAlgo == HashAlgorithmName.SHA1.Name) { algo = HashAlgorithmName.SHA1; }
+      if (hashAlgo == HashAlgorithmName.SHA256.Name) { algo = HashAlgorithmName.SHA256; }
+      if (hashAlgo == HashAlgorithmName.SHA384.Name) { algo = HashAlgorithmName.SHA384; }
+      if (hashAlgo == HashAlgorithmName.SHA512.Name) { algo = HashAlgorithmName.SHA512; }
+      
+      var hasha = IncrementalHash.CreateHash(algo);
+      strm.Seek(0, SeekOrigin.Begin);
+      var res = _computeHash(strm, hasha);
+      hasha.Dispose();
+      strm.Seek(0, SeekOrigin.Begin);
+      return BUCommon.Hash.Create(algo.Name, res);
+    }
+
+    public byte[] encBytes(byte[] foo)
+    {
+      if (foo.Length > _rsa.KeySize) 
+        { 
+          throw new ArgumentOutOfRangeException(string.Format("bytes ({0}) are bigger than keysize ({1})"
+            , foo.Length, _rsa.KeySize));
+        }
+      return _rsa.Encrypt(foo, RSAEncryptionPadding.OaepSHA1);
+    }
+    public byte[] decBytes(byte[] foo)
+    { return _rsa.Decrypt(foo, RSAEncryptionPadding.OaepSHA1); }
+
+    /// <summary>
     /// encrypt the contents of the provided stream.
     /// </summary>
     /// <param name="instrm"></param>
