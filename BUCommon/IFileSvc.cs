@@ -25,7 +25,26 @@ namespace BUCommon
     IReadOnlyList<FreezeFile> getFiles(Container container);
     IReadOnlyList<FreezeFile> getVersions(Container container);
 
+    /// <summary>
+    /// this function obliterates the file.
+    /// </summary>
+    /// <param name="file"></param>
     void delete(FreezeFile file);
+    Task<FreezeFile> deleteAsync(FreezeFile file);
+
+    /// <summary>
+    /// this function marks it as deleted
+    /// </summary>
+    /// <param name="file"></param>
+    /// <remarks>
+    /// this function may have the same effect as the 'delete' function
+    /// ,depending on the underlying service.
+    /// (B2 has the concept of versions, so 'remove' will mark it as deleted
+    ///  ,it will not show up in a regular 'get files'
+    ///  , but versions will still exist.)
+    /// </remarks>
+    void remove(FreezeFile file);
+    Task<FreezeFile> removeAsync(FreezeFile file);
 
     /// <summary>
     /// 

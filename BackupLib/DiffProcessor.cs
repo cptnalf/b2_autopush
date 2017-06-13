@@ -96,66 +96,84 @@ namespace BackupLib
             switch(runType)
               {
               case RunType.upload: 
-                { 
+                {
                   path = x.local.path.Replace('/', Path.DirectorySeparatorChar); 
                   path = Path.Combine(root, path);
-                  filestrm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite|FileShare.Delete);
-                  var hash = tl.fe.hashContents(filestrm);
-                  /* since we're reading anyways, populate the file hash. */
-                  x.local.localHash = hash;
-                  
-                  var memstrm = tl.fe.encrypt(filestrm);
-                  memstrm.Seek(0, System.IO.SeekOrigin.Begin);
-                  x.local.localHash = tl.fe.hashContents("SHA1", memstrm);
-                  memstrm.Seek(0, System.IO.SeekOrigin.Begin);
 
-                  byte[] buf = tl.fe.encBytes(x.local.localHash.raw);
-                  var b64 = Convert.ToBase64String(buf);
-                  var ff = service.uploadFile(tl.auth, container, x.local, memstrm, b64);
-                  memstrm.Dispose();
-                  memstrm = null;
-
-                  if (ff == null)
-                    { errorHandler?.Invoke(x, new Exception("Failed to proces!")); }
-                  else 
+                  switch(x.type)
                     {
-                      ff.localHash = x.local.localHash;
-                      lock(cache) 
-                        {
-                          cache.add(x.local);
-                          cache.add(ff);
-                        }
+                      case DiffType.deleted:
+                      {
+                        service.delete(x.remote);
+                        lock(cache) { cache.delete(x.remote); }
+                        break;
+                      }
+                      case DiffType.created:
+                      case DiffType.updated:
+                      {
+                        filestrm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite|FileShare.Delete);
+                        var hash = tl.fe.hashContents(filestrm);
+                        /* since we're reading anyways, populate the file hash. */
+                        x.local.localHash = hash;
+                  
+                        var memstrm = tl.fe.encrypt(filestrm);
+                        memstrm.Seek(0, System.IO.SeekOrigin.Begin);
+                        x.local.localHash = tl.fe.hashContents("SHA1", memstrm);
+                        memstrm.Seek(0, System.IO.SeekOrigin.Begin);
+
+                        byte[] buf = tl.fe.encBytes(x.local.localHash.raw);
+                        var b64 = Convert.ToBase64String(buf);
+                        var ff = service.uploadFile(tl.auth, container, x.local, memstrm, b64);
+                        memstrm.Dispose();
+                        memstrm = null;
+
+                        if (ff == null)
+                          { errorHandler?.Invoke(x, new Exception("Failed to proces!")); }
+                        else 
+                          {
+                            ff.localHash = x.local.localHash;
+                            lock(cache) 
+                              {
+                                cache.add(x.local);
+                                cache.add(ff);
+                              }
+                          }
+                        break;
+                      }
                     }
                    break; 
                 }
               case RunType.download: 
                 {
-                  /* this really needs to check to see if we need to download it. 
-                   * that will make it resumeable.
-                   */
-                  path = Path.Combine(root, x.remote.path.Replace('/', Path.DirectorySeparatorChar));
+                  if (x.type == DiffType.created || x.type== DiffType.updated)
+                    {
+                      /* this really needs to check to see if we need to download it. 
+                       * that will make it resumeable.
+                       */
+                      path = Path.Combine(root, x.remote.path.Replace('/', Path.DirectorySeparatorChar));
 
-                  {
-                    /* need to make sure the download directory parts exist before we download and save the file. */
-                    var pathfname = Path.GetFileName(path);
-                    var pathpart = path.Substring(0,path.Length - pathfname.Length);
-                    System.IO.Directory.CreateDirectory(pathpart);
-                  }
+                      {
+                        /* need to make sure the download directory parts exist before we download and save the file. */
+                        var pathfname = Path.GetFileName(path);
+                        var pathpart = path.Substring(0,path.Length - pathfname.Length);
+                        System.IO.Directory.CreateDirectory(pathpart);
+                      }
 
-                  var strm = service.downloadFile(tl.auth, x.remote);
-                  filestrm = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete);
-                  tl.fe.decrypt(strm, filestrm);
-                  strm.Dispose();
-                  strm = null;
+                      var strm = service.downloadFile(tl.auth, x.remote);
+                      filestrm = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete);
+                      tl.fe.decrypt(strm, filestrm);
+                      strm.Dispose();
+                      strm = null;
 
-                  var hash = tl.fe.hashContents(filestrm);
+                      var hash = tl.fe.hashContents(filestrm);
 
-                  x.remote.localHash = hash;
-                  lock(cache) { cache.add(x.remote); }
+                      x.remote.localHash = hash;
+                      lock(cache) { cache.add(x.remote); }
 
-                  filestrm.Close();
-                  filestrm.Dispose();
-                  filestrm = null;
+                      filestrm.Close();
+                      filestrm.Dispose();
+                      filestrm = null;
+                    }
 
                   break; 
                 }

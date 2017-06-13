@@ -249,12 +249,34 @@ b2_get_download_authorization
     }
     
     public void delete(BUCommon.FreezeFile file) { var x = deleteAsync(file).Result; }
+    public async Task<BUCommon.FreezeFile> deleteAsync(BUCommon.FreezeFile file)
+    {
+      var res = await _client.Files.Delete(file.fileID, file.path);
 
-    public async Task<string> deleteAsync(BUCommon.FreezeFile file)
+      var ff = new BUCommon.FreezeFile
+        {
+          fileID=res.FileId
+          , container=file.container
+          , path=res.FileName
+          , uploaded=res.UploadTimestampDate
+          , mimeType=res.ContentType
+          , storedHash=BUCommon.Hash.FromString("SHA1", res.ContentSHA1)
+          , serviceInfo=res.Action
+        };
+      if (res.FileInfo.ContainsKey(LAST_MOD_MILLIS)) { }
+      if (res.FileInfo.ContainsKey(LOCALHASH))
+        { ff.enchash = res.FileInfo[LOCALHASH]; }
+
+      return ff;
+    }
+
+    public void remove(BUCommon.FreezeFile file) { var x = removeAsync(file).Result; }
+
+    public async Task<BUCommon.FreezeFile> removeAsync(BUCommon.FreezeFile file)
     {
       var res = await _client.Files.Hide(file.path, file.container.id);
 
-      return res.FileId;
+      return file;
     }
 
     public object threadStart()

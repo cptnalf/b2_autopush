@@ -125,6 +125,29 @@ namespace BUCommon
         }
     }
 
+    public void delete(FreezeFile file)
+    {
+      if (file.container != null)
+        {
+          var conts = _containers
+            .Where(x => x.accountID==file.container.accountID && x.id == file.container.id)
+            ;
+          foreach(var c in conts)
+            {
+              var fs = c.files.Where(x => x.fileID == file.fileID).ToList();
+              foreach(var f1 in fs) { c.files.Remove(f1); }
+            }
+        }
+
+      var fs1 = _files
+          .Where(    x => x.fileID== file.fileID 
+                 && (file.container != null 
+                      ? x.container == null
+                      : x.container.id == file.container.id && x.container.accountID== file.container.accountID))
+          .ToList();
+      foreach(var f in fs1) { _files.Remove(f); }
+    }
+
     public IReadOnlyList<FreezeFile> getContainer(long accountID, string id, string name)
     {
       var cont = _containers.Where(x => x.accountID == accountID 

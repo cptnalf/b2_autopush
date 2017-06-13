@@ -24,9 +24,7 @@ namespace BackupLib
     }
 
     public void authorize() { }
-
-    public void delete(FreezeFile file) { File.Delete(file.fileID); }
-
+    
     public IReadOnlyList<Container> getContainers()
     {
       var dirs = Directory.EnumerateDirectories(_root);
@@ -56,9 +54,24 @@ namespace BackupLib
 
     public IReadOnlyList<FreezeFile> getVersions(Container container) { return getFiles(container); }
 
+    public void delete(FreezeFile file) { var res = deleteAsync(file).Result; }
+    public Task<FreezeFile> deleteAsync(FreezeFile file)
+    {
+      var res = Task.Run(() => { File.Delete(file.fileID); return file; } );
+      return res;
+    }
+
+    /* so, this should place it in the recycle bin, but 
+     * that's windows only, and i don't know really what
+     * else to do...
+     */
+    public void remove(FreezeFile file) { delete(file); }
+    public Task<FreezeFile> removeAsync(FreezeFile file)
+    { return deleteAsync(file); }
+    
     public object threadStart() { return null; }
     public void threadStop(object data) { }
-
+    
     public Stream downloadFile(object data, FreezeFile file) { return downloadFileAsync(data, file).Result; }
 
     public async Task<Stream> downloadFileAsync(object data, FreezeFile file)
