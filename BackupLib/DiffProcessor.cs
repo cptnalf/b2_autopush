@@ -183,6 +183,7 @@ namespace BackupLib
           catch (Exception e)
             {
               errorHandler?.Invoke(x,e);
+              pls.Stop();
               throw new ArgumentException(string.Format("Error processing file diff item. {0} - {1}", x.type
                 , (x.local != null ? x.local.path : x.remote.path))
                 , e);

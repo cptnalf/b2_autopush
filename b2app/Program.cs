@@ -21,8 +21,8 @@ namespace b2app
           var x = e;
           while(x != null)
             {
-              _print(e);
-              x = e.InnerException;
+              _print(x);
+              x = x.InnerException;
             }
 
           res = 1;
@@ -40,7 +40,7 @@ namespace b2app
       Console.WriteLine(e.GetType().Name);
       Console.WriteLine(e.Message);
       Console.WriteLine(e.Source);
-      Console.WriteLine(e.TargetSite.Name);
+      if (e.TargetSite != null) { Console.WriteLine(e.TargetSite.Name); }
       Console.WriteLine(e.StackTrace);
       Console.WriteLine("----------------------------");
       if (e.InnerException != null) { Console.WriteLine("inner exception:"); }
@@ -114,56 +114,7 @@ namespace b2app
        *  - upload in-memory encrypted part
        *  - add file information to local cache, persist cache to disk.
        * 
-       */
-
-      /* local cache should start as a persisted version of the FreezeFile list
-       * created from the downloaded portion.
-       * 
-       * seems like a compressed xml or json would be good?
-       */
-
-      /* 
-       */
-#if dob2
-      var opts = new B2Net.Models.B2Options();
-      opts.AccountId = "";
-      opts.ApplicationKey = "";
-
-      var x = new B2Net.B2Client(opts);
-      var autht = x.Authorize().Result;
-      
-      var blst = x.Buckets.GetList().Result;
-
-      var bkt = blst.FirstOrDefault();
-      var flst = x.Files.GetList(bkt.BucketId);
-#endif
-
-      BUCommon.AccountList accts = new BUCommon.AccountList();
-      accts.load("accounts.xml");
-      var acct = accts.accounts.FirstOrDefault();
-
-      if (acct == null)
-        {
-          var contents = string.Empty;
-          {
-            var keyf = new System.IO.FileStream("b2.key", System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite);
-            var strm = new System.IO.StreamReader(keyf);
-            while(!strm.EndOfStream) 
-              { var str = strm.ReadLine(); if (!string.IsNullOrWhiteSpace(str) && str[0] != '#') { contents = str; } }
-
-            strm.Close();
-            keyf = null;
-            contents = contents.Trim();
-          }
-
-          acct = accts.create("b2");
-          acct.connStr = contents;
-          acct.svcName = "CommB2.Connection";
-          BackupLib.AccountBuilder.Load(acct);
-        }
-
-      accts.save("accounts.xml");
-      
+       */      
     }
   }
 }

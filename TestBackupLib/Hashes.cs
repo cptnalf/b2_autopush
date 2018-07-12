@@ -44,5 +44,11 @@ namespace TestBackupLib
       Assert.AreEqual(hash.base64, filehash.base64);
       
     }
+
+    [TestMethod]
+    public void ECDSATest()
+    {
+      var ecdsa = System.Security.Cryptography.ECDsa.Create();
+    }
   }
 }

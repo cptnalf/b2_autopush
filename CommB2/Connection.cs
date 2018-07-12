@@ -152,13 +152,15 @@ b2_get_download_authorization
       account.auth["AuthorizationToken"] = _opts.AuthorizationToken;
       account.auth["DownloadUrl"] = _opts.DownloadUrl;
       account.auth["ApiUrl"] = _opts.ApiUrl;
-      account.auth["MinPartSize"] = string.Format("{0:n}", _opts.absoluteMinimumPartSize);
-      account.auth["RecommendedPartSize"] = string.Format("{0:n}",_opts.recommendedPartSize);
+      account.auth["MinPartSize"] = string.Format("{0:n}", _opts.AbsoluteMinimumPartSize);
+      account.auth["RecommendedPartSize"] = string.Format("{0:n}",_opts.RecommendedPartSize);
     }
 
     public BUCommon.Container containerCreate(BUCommon.Account account, string name)
     {
-      var res = _client.Buckets.Create(name, B2Net.Http.BucketTypes.allPrivate).Result;
+      var bo = new B2Net.Models.B2BucketOptions();
+      
+      var res = _client.Buckets.Create(name, bo).Result;
       return new BUCommon.Container 
           { 
             accountID =account.id, account=account
@@ -352,7 +354,7 @@ b2_get_download_authorization
                           delay = false;
                           break;
                         }
-                      else { throw new Exception("unexpected error", e); }
+                      else { throw new Exception("unexpected error (timeout?)", e); }
                     }
 
                   if (! iserr) { break; }
