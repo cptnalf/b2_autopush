@@ -341,9 +341,9 @@ b2_get_download_authorization
                           break;
                         }
                     }
-                  catch(B2Net.B2Exception be1)
+                  catch(B2Net.Models.B2Exception be1)
                     {
-                      if (be1.status == "503" && pausetime < maxDelay) 
+                      if (be1.Status == "503" && pausetime < maxDelay) 
                         { pausetime = pausetime * 2; }
                     }
                   catch (Exception e)
@@ -381,10 +381,10 @@ b2_get_download_authorization
                       data.auth = null;
                     }
                 }
-              catch (B2Net.B2Exception be)
+              catch (B2Net.Models.B2Exception be)
                 {
-                  if (be.status == "401" || be.status == "503") { data.auth = null; }
-                  else if (be.status == "408" || be.status == "429" ) 
+                  if (be.Status == "401" || be.Status == "503") { data.auth = null; }
+                  else if (be.Status == "408" || be.Status == "429" ) 
                     { delay = true; pausetime = 1; }
                   else
                     { throw new Exception("Broken.", be); }
