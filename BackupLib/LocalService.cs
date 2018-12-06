@@ -100,7 +100,7 @@ namespace BackupLib
       FileStream strm = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite| FileShare.Delete);
       int len = await IOUtils.WriteStream(contents, strm);
       contents.Seek(0, SeekOrigin.Begin);
-      var hasha = System.Security.Cryptography.HashAlgorithm.Create("SHA256");
+      var hasha = (System.Security.Cryptography.HashAlgorithm)System.Security.Cryptography.CryptoConfig.CreateFromName("SHA256");
       var hash = hasha.ComputeHash(contents);
 
       var ff = new FreezeFile
