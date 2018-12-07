@@ -48,14 +48,15 @@ namespace b2app
 
     static void Main(string[] args)
     {
-      CommandLine.Parser.Default.ParseArguments<Options.AccountsOpt,Options.AuthOpt,Options.ContOpt,Options.LSOpt,Options.SyncOpts,Options.CopyOpts>(args)
+      CommandLine.Parser.Default.ParseArguments<Options.AccountsOpt,Options.AuthOpt,Options.ContOpt,Options.LSOpt,Options.SyncOpts,Options.CopyOpts, Options.AddAccountOptions>(args)
         .MapResult(
           (Options.AccountsOpt o) => Run(new Accounts(o))
           ,(Options.AuthOpt o1) => Run(new Auth(o1))
           ,(Options.ContOpt o4) => Run(new ListContainers(o4))
           ,(Options.LSOpt o2) => Run(new ListFiles(o2))
-          , (Options.SyncOpts o3) => Run(new Sync(o3))
-          , (Options.CopyOpts o5) => Run(new Copy(o5))
+          ,(Options.SyncOpts o3) => Run(new Sync(o3))
+          ,(Options.CopyOpts o5) => Run(new Copy(o5))
+          ,(Options.AddAccountOptions o6) => Run(new AddAccount(o6))
           ,(IEnumerable<Error> errs) => { foreach(var e in errs) { Console.WriteLine(e.Tag); } return 0; }
           );
       /*
