@@ -34,9 +34,10 @@
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\B2.NET\src\B2Net.csproj">
+    <ProjectReference Include="..\..\B2.NET\src\B2Net.csproj" AdditionalProperties="TargetFramework=$(TargetFramework)">
       <Project>{e178ff84-e6b4-4c08-8b2f-e190a6bcfe4a}</Project>
       <Name>B2Net</Name>
+      <SetTargetFramework>TargetFramework=$(TargetFramework)</SetTargetFramework>
     </ProjectReference>
     <ProjectReference Include="..\BUCommon\BUCommon.csproj">
       <Project>{36731f63-9ade-4908-a126-e41963506dc2}</Project>
