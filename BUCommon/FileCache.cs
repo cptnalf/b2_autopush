@@ -204,6 +204,33 @@ namespace BUCommon
       _files.Clear();
       if (ucx != null)
         { foreach(var c in ucx.containers) { add(c); } }
+
+      var fn = System.IO.Path.GetFileName(file);
+      var path = file.Substring(0,file.Length - fn.Length);
+      var db = CacheDBContext.Build(path);
+
+      foreach(var f in this._files)
+        {
+          var f1 = db.FreezeFiles.Where(x => x.fileID == f.fileID).FirstOrDefault();
+          if (f1 == null)
+            {
+              f1 = new FreezeFile
+                {
+                  path = f.path
+                  ,mimeType = f.mimeType
+                  , storedHash = f.storedHash
+                  , localHash = f.localHash
+                  , modified = f.modified
+                  ,uploaded = f.uploaded
+                  , fileID = f.fileID
+                  , containerID = f.containerID
+                  , serviceInfo = f.serviceInfo
+                  , enchash = f.enchash
+                };
+              db.FreezeFiles.Add(f1);
+              db.SaveChanges();
+            }
+        }
     }
 
     private XmlSerializer _serializerMake() 

@@ -5,6 +5,8 @@ namespace BUCommon
 {
   public class FreezeFile
   {
+    private Container _cont;
+
     /// <summary>non-rooted path to the file.</summary>
     public string path {get;set; }
 
@@ -27,13 +29,26 @@ namespace BUCommon
     public string serviceInfo {get;set;}
     public string enchash {get;set;}
    
+    public string containerID {get;set;}
+
+    [XmlIgnore]
+    public long id {get;set;}
+
     /// <summary>this is the hash of the local contents as they were sent to the provider.</summary>
     [XmlIgnore]
     public Hash lastHash {get;set;}
 
     /// <summary>the container this file belongs to (null if not on a provider)</summary>
     [XmlIgnore]
-    public Container container {get;set;}
+    public Container container
+    {
+      get { return _cont; }
+      set 
+      {
+        _cont = value;
+        if (this.containerID != _cont.id) { this.containerID = _cont.id; }
+      }
+    }
     
     public FreezeFile() { }
 
