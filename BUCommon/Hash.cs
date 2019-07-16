@@ -31,6 +31,8 @@ namespace BUCommon
       return res;
     }
 
+    public int id {get;set}
+
     /// <summary>hash type</summary>
     /// <example>
     /// SHA
