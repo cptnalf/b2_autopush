@@ -211,26 +211,66 @@ namespace BUCommon
 
       foreach(var f in this._files)
         {
-          var f1 = db.FreezeFiles.Where(x => x.fileID == f.fileID).FirstOrDefault();
+          var f1 = db.Files.Where(x => x.fileID == f.fileID).FirstOrDefault();
           if (f1 == null)
             {
-              f1 = new FreezeFile
+              Models.Hash sh = _makeHashRec(db, f.storedHash);
+              Models.Hash lh = _makeHashRec(db, f.localHash);
+              Models.Container c = _makeContainer(db, f.container);
+
+              f1 = new Models.ContFile
                 {
                   path = f.path
                   ,mimeType = f.mimeType
-                  , storedHash = f.storedHash
-                  , localHash = f.localHash
+                  , storedHashID = sh?.id
+                  , localHashID = lh?.id
                   , modified = f.modified
                   ,uploaded = f.uploaded
                   , fileID = f.fileID
-                  , containerID = f.containerID
+                  , containerID = c.id
                   , serviceInfo = f.serviceInfo
                   , enchash = f.enchash
                 };
-              db.FreezeFiles.Add(f1);
+              db.Files.Add(f1);
               db.SaveChanges();
             }
         }
+    }
+
+    private Models.Hash _makeHashRec(CacheDBContext db, Hash h)
+    {
+      Models.Hash sh = null;
+      if (h != null)
+        { 
+          sh = db.Hashes.Where(x => x.base64 == h.base64 && x.type == h.type).FirstOrDefault();
+          if (sh == null )
+            {
+              sh = new Models.Hash { base64=h.base64, type=h.type };
+              db.Hashes.Add(sh);
+              db.SaveChanges();
+            }
+        }
+      
+      return sh;
+    }
+    private Models.Container _makeContainer(CacheDBContext db, Container c)
+    {
+      Models.Container c1 = null;
+      c1 = db.Containers.Where(x => x.containerID == c.id && x.type == c.type && x.accountID == c.accountID).FirstOrDefault();
+      if (c1 == null)
+        {
+          c1 = new Models.Container 
+            {
+              type=c.type
+              , accountID = c.accountID
+              , name=c.name
+              , containerID = c.id
+            };
+          db.Containers.Add(c1);
+          db.SaveChanges();
+        }
+      
+      return c1;
     }
 
     private XmlSerializer _serializerMake() 

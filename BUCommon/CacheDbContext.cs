@@ -12,30 +12,54 @@ namespace BUCommon
       public string name {get;set;}
     }
 
+    public class Hash
+    {
+      public int id {get;set;}
+      public string type {get;set;}
+      public string base64 {get;set;}
+    }
+
     public class ContFile
     {
       public int id {get;set;}
+
+      public int containerID {get;set;}
+
       public string path {get;set;}
       public string mimeType {get;set; }
 
-      
-	public Hash storedHash {get;set; }
+	    public int? storedHashID {get;set; }
 
-    /// <summary>hash for the non-encrypted contents</summary>
-    public Hash localHash {get;set; }
+      /// <summary>hash for the non-encrypted contents</summary>
+      public int? localHashID {get;set; }
 
-    public DateTime modified {get;set; }
-    /// <summary>when this file was uploaded to the provider</summary>
-    public DateTime uploaded {get;set; }
+      public DateTime modified {get;set; }
+      /// <summary>when this file was uploaded to the provider</summary>
+      public DateTime uploaded {get;set; }
 
-    /// <summary>cloud provider ID</summary>
-    public string fileID {get;set; }
+      /// <summary>cloud provider ID</summary>
+      public string fileID {get;set; }
 
-    public string serviceInfo {get;set;}
-    public string enchash {get;set;}
-   
-    public string containerID {get;set;}
+      public string serviceInfo {get;set;}
+      public string enchash {get;set;}
+    
+      public Hash storedHash {get;set;}
+      public Hash localHash {get;set;}
 
+      public Container container {get;set;}
+    }
+
+    public class Container
+    {
+      public int id {get;set;}
+
+      public long accountID {get;set;}
+      public string containerID {get;set;}
+      public string name {get;set;}
+      public string type {get;set;}
+
+      public Account account {get;set;}
+      public List<ContFile> files {get;set;}
     }
   }
     
@@ -48,8 +72,10 @@ namespace BUCommon
 
       return new CacheDBContext(opts.Options);
     }
-    public DbSet<FreezeFile> FreezeFiles {get;set;}
-    public DbSet<Hash> Hashes {get;set;}
+    public DbSet<Models.Account> Accounts {get;set;}
+    public DbSet<Models.ContFile> Files {get;set;}
+    public DbSet<Models.Hash> Hashes {get;set;}
+    public DbSet<Models.Container> Containers {get;set;}
       
     public CacheDBContext(DbContextOptions opts) : base(opts) { }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -60,8 +86,16 @@ namespace BUCommon
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+      var ae = modelBuilder.Entity<Models.Account>();
+      ae.HasKey(x => x.id);
+      ae.Property(x => x.id)
+        .HasColumnType("INTEGER PRIMARY KEY AUTOINCREMENT")
+        .ValueGeneratedOnAdd();
+      ae.Property(x => x.name)
+        .IsRequired();
+      
       // freezefile
-      var ffEntity = modelBuilder.Entity<FreezeFile>();
+      var ffEntity = modelBuilder.Entity<Models.ContFile>();
       ffEntity.HasKey(x => x.id);
 
       ffEntity.Property(x => x.id)
@@ -73,24 +107,32 @@ namespace BUCommon
       
       ffEntity.Property(x => x.fileID)
         .IsRequired();
-      ffEntity.Property(x => x.enchash);
       ffEntity.Property(x => x.uploaded)
         .IsRequired();
 
-      ffEntity.Ignore(x => x.container);
-      ffEntity.Ignore(x => x.lastHash);
-
       // hashes
-      var he = modelBuilder.Entity<Hash>();
+      var he = modelBuilder.Entity<Models.Hash>();
       he.HasKey(x => x.id);
       he.Property(x => x.id)
-	  .HasColumnType("INTEGER PRIMARY KEY AUTOINCREMENT")
-	  .ValueGeneratedOnAdd();
+        .HasColumnType("INTEGER PRIMARY KEY AUTOINCREMENT")
+        .ValueGeneratedOnAdd();
       he.Property(x => x.type)
-	  .IsRequired();
+	      .IsRequired();
       he.Property(x => x.base64)
-	  .IsRequired();
-      he.Ignore(x => x.raw);
+	      .IsRequired();
+
+
+      var ce = modelBuilder.Entity<Models.Container>();
+      ce.HasKey(x => x.id);
+      ce.Property(x => x.id)
+        .HasColumnType("INTEGER PRIMARY KEY AUTOINCREMENT")
+        .ValueGeneratedOnAdd();
+      
+      ce.Property(x => x.type)
+        .IsRequired();
+      ce.Property(x => x.name)
+        .IsRequired();
+      ce.Property(x => x.containerID).IsRequired();
     }
   }
 }
