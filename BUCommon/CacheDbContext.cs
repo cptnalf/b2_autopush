@@ -9,6 +9,7 @@ namespace BUCommon
     public class Account
     {
       public int id {get;set;}
+      public long accountID {get;set;}
       public string name {get;set;}
     }
 
@@ -65,12 +66,16 @@ namespace BUCommon
     
   public class CacheDBContext : DbContext
   {
+    public const string Db_File = "b2app.cachedb.db";
     public static CacheDBContext Build(string path)
     {
       var opts = new DbContextOptionsBuilder();
-      opts.UseSqlite(string.Format("Data Source={0}", System.IO.Path.Combine(path, "b2app.cachedb.db")));
+      opts.UseSqlite(string.Format("Data Source={0}", System.IO.Path.Combine(path, Db_File)));
 
-      return new CacheDBContext(opts.Options);
+      var db = new CacheDBContext(opts.Options);
+      db.Database.EnsureCreated();
+
+      return db;
     }
     public DbSet<Models.Account> Accounts {get;set;}
     public DbSet<Models.ContFile> Files {get;set;}
@@ -89,17 +94,18 @@ namespace BUCommon
       var ae = modelBuilder.Entity<Models.Account>();
       ae.HasKey(x => x.id);
       ae.Property(x => x.id)
-        .HasColumnType("INTEGER PRIMARY KEY AUTOINCREMENT")
+        //.HasColumnType("INTEGER AUTOINCREMENT")
         .ValueGeneratedOnAdd();
       ae.Property(x => x.name)
         .IsRequired();
+      ae.Property(x => x.accountID).IsRequired();
       
       // freezefile
       var ffEntity = modelBuilder.Entity<Models.ContFile>();
       ffEntity.HasKey(x => x.id);
 
       ffEntity.Property(x => x.id)
-        .HasColumnType("INTEGER PRIMARY KEY AUTOINCREMENT")
+        //.HasColumnType("INTEGER PRIMARY KEY AUTOINCREMENT")
         .ValueGeneratedOnAdd();
 
       ffEntity.Property(x => x.containerID)
@@ -114,7 +120,7 @@ namespace BUCommon
       var he = modelBuilder.Entity<Models.Hash>();
       he.HasKey(x => x.id);
       he.Property(x => x.id)
-        .HasColumnType("INTEGER PRIMARY KEY AUTOINCREMENT")
+        //.HasColumnType("INTEGER PRIMARY KEY AUTOINCREMENT")
         .ValueGeneratedOnAdd();
       he.Property(x => x.type)
 	      .IsRequired();
@@ -125,7 +131,7 @@ namespace BUCommon
       var ce = modelBuilder.Entity<Models.Container>();
       ce.HasKey(x => x.id);
       ce.Property(x => x.id)
-        .HasColumnType("INTEGER PRIMARY KEY AUTOINCREMENT")
+        //.HasColumnType("INTEGER PRIMARY KEY AUTOINCREMENT")
         .ValueGeneratedOnAdd();
       
       ce.Property(x => x.type)
@@ -133,6 +139,9 @@ namespace BUCommon
       ce.Property(x => x.name)
         .IsRequired();
       ce.Property(x => x.containerID).IsRequired();
+      ce.Property(x => x.accountID).IsRequired();
+      ce.Ignore(x => x.account);
+      ce.Ignore(x => x.files);
     }
   }
 }

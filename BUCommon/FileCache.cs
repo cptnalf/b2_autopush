@@ -1,21 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Xml.Serialization;
 
 namespace BUCommon
 {
   using System.Globalization;
   using System.IO;
+  using Microsoft.EntityFrameworkCore;
 
   public class FileCache
   {
-    [XmlRoot]
-    public class FileCacheXml
-    {
-      public List<Container> containers {get;set; }
-      public FileCacheXml() { this.containers = new List<Container>(); }
-    }
     
     private List<FreezeFile> _files = new List<FreezeFile>();
     private List<Container> _containers = new List<Container>();
@@ -188,10 +182,24 @@ namespace BUCommon
       strm.Dispose();
       strm = null;
       xdr = null;
+
+
+      var fn = System.IO.Path.GetFileName(file);
+      var path = file.Substring(0,file.Length - fn.Length);
+      var db = CacheDBContext.Build(path);
+
+
     }
 
     public void load(string file)
     {
+      /* migrate to .json */
+      if (string.Compare(".xml", System.IO.Path.GetExtension(file), true) == 0)
+        {
+          var oldStorage = 
+
+        }
+
       var strm = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
       var xdr  = _serializerMake();
       var ucx = xdr.Deserialize(strm) as FileCacheXml;
@@ -209,29 +217,50 @@ namespace BUCommon
       var path = file.Substring(0,file.Length - fn.Length);
       var db = CacheDBContext.Build(path);
 
+    }
+
+    private void _writeFiles(CacheDBContext db)
+    {
       foreach(var f in this._files)
         {
-          var f1 = db.Files.Where(x => x.fileID == f.fileID).FirstOrDefault();
+          var f1 = (
+            from cf in db.Files
+            join c1 in db.Containers on cf.containerID equals c1.id
+            where cf.fileID == f.fileID && c1.containerID == f.containerID
+            select cf
+            )
+            .FirstOrDefault();
+          
           if (f1 == null)
             {
-              Models.Hash sh = _makeHashRec(db, f.storedHash);
-              Models.Hash lh = _makeHashRec(db, f.localHash);
               Models.Container c = _makeContainer(db, f.container);
 
               f1 = new Models.ContFile
                 {
                   path = f.path
                   ,mimeType = f.mimeType
-                  , storedHashID = sh?.id
-                  , localHashID = lh?.id
-                  , modified = f.modified
-                  ,uploaded = f.uploaded
                   , fileID = f.fileID
                   , containerID = c.id
-                  , serviceInfo = f.serviceInfo
-                  , enchash = f.enchash
                 };
               db.Files.Add(f1);
+              db.SaveChanges();
+            }
+          
+          if (f1.path != f.path) { f1.path = f.path; }
+          if (f1.mimeType != f.mimeType) { f1.mimeType = f.mimeType; }
+          if (f1.modified != f.modified) { f1.modified = f.modified; }
+          if (f1.uploaded != f.uploaded) { f1.uploaded = f.uploaded; }
+          if (f1.serviceInfo != f.serviceInfo) { f1.serviceInfo = f.serviceInfo; }
+          if (f1.enchash != f.enchash) { f1.enchash = f.enchash; }
+
+          Models.Hash sh = _makeHashRec(db, f.storedHash);
+          Models.Hash lh = _makeHashRec(db, f.localHash);
+          f1.storedHashID = sh?.id;
+          f1.localHashID = lh?.id;
+          
+          var e = db.Entry(f1);
+          if (e.State == EntityState.Modified || e.State == EntityState.Added)
+            {
               db.SaveChanges();
             }
         }
@@ -240,8 +269,8 @@ namespace BUCommon
     private Models.Hash _makeHashRec(CacheDBContext db, Hash h)
     {
       Models.Hash sh = null;
-      if (h != null)
-        { 
+      if (h != null && !string.IsNullOrWhiteSpace(h.type) && !string.IsNullOrWhiteSpace(h.base64))
+        {
           sh = db.Hashes.Where(x => x.base64 == h.base64 && x.type == h.type).FirstOrDefault();
           if (sh == null )
             {
@@ -273,7 +302,5 @@ namespace BUCommon
       return c1;
     }
 
-    private XmlSerializer _serializerMake() 
-    { return new XmlSerializer(typeof(FileCacheXml), new Type[] { typeof(FreezeFile), typeof(Hash)}); }
   }
 }
