@@ -6,13 +6,6 @@ namespace BUCommon
 {
   namespace Models
   {
-    public class Account
-    {
-      public int id {get;set;}
-      public long accountID {get;set;}
-      public string name {get;set;}
-    }
-
     public class Hash
     {
       public int id {get;set;}
@@ -23,8 +16,8 @@ namespace BUCommon
     public class ContFile
     {
       public int id {get;set;}
-
-      public int containerID {get;set;}
+      public long accountID {get;set;}
+      public string containerID {get;set;}
 
       public string path {get;set;}
       public string mimeType {get;set; }
@@ -46,21 +39,6 @@ namespace BUCommon
     
       public Hash storedHash {get;set;}
       public Hash localHash {get;set;}
-
-      public Container container {get;set;}
-    }
-
-    public class Container
-    {
-      public int id {get;set;}
-
-      public long accountID {get;set;}
-      public string containerID {get;set;}
-      public string name {get;set;}
-      public string type {get;set;}
-
-      public Account account {get;set;}
-      public List<ContFile> files {get;set;}
     }
   }
     
@@ -77,10 +55,8 @@ namespace BUCommon
 
       return db;
     }
-    public DbSet<Models.Account> Accounts {get;set;}
     public DbSet<Models.ContFile> Files {get;set;}
     public DbSet<Models.Hash> Hashes {get;set;}
-    public DbSet<Models.Container> Containers {get;set;}
       
     public CacheDBContext(DbContextOptions opts) : base(opts) { }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -91,6 +67,7 @@ namespace BUCommon
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+      /*
       var ae = modelBuilder.Entity<Models.Account>();
       ae.HasKey(x => x.id);
       ae.Property(x => x.id)
@@ -99,7 +76,7 @@ namespace BUCommon
       ae.Property(x => x.name)
         .IsRequired();
       ae.Property(x => x.accountID).IsRequired();
-      
+      */
       // freezefile
       var ffEntity = modelBuilder.Entity<Models.ContFile>();
       ffEntity.HasKey(x => x.id);
@@ -127,7 +104,7 @@ namespace BUCommon
       he.Property(x => x.base64)
 	      .IsRequired();
 
-
+      /*
       var ce = modelBuilder.Entity<Models.Container>();
       ce.HasKey(x => x.id);
       ce.Property(x => x.id)
@@ -142,6 +119,7 @@ namespace BUCommon
       ce.Property(x => x.accountID).IsRequired();
       ce.Ignore(x => x.account);
       ce.Ignore(x => x.files);
+      */
     }
   }
 }
