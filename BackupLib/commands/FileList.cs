@@ -27,23 +27,26 @@ namespace BackupLib.commands
     {
       if (useRemote) { _remoteQuery(); }
       
-      var files = 
-          cache.files
-            .Where(x =>   
-                (   account == null 
-                 || (   x.container != null 
-                     && account.id == x.container.accountID
-                     && (container == null || x.container.id == container.id)
-                    )
-                )
-            );
+      IQueryable<BUCommon.FreezeFile> filesSrc = null;
+      if (account == null)
+        {
+          if (container == null) { filesSrc = cache.getContainer(0, null, null); }
+          else { filesSrc = cache.getContainer(container.accountID, container.id, null); }
+        }
+      else
+        {
+          if (container == null) { filesSrc = cache.getContainer(account.id, null, null); }
+          else { filesSrc = cache.getContainer(account.id, container.id, null); }
+        }
+
+
       if (!string.IsNullOrWhiteSpace(pathRE))
         {
           var re = new System.Text.RegularExpressions.Regex(pathRE, System.Text.RegularExpressions.RegexOptions.Compiled);
-          files = files.Where(x => re.IsMatch(x.path));
+          filesSrc = filesSrc.Where(x => re.IsMatch(x.path));
         }
       
-      return files.ToList();
+      return filesSrc.ToList();
     }
 
     private void _remoteQuery()

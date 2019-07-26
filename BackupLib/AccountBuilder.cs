@@ -26,13 +26,22 @@ namespace BackupLib
       var acctlst = new BUCommon.AccountList();
       acctlst.load(file);
 
-      file = "b2app.filecache.xml";
+      file = "b2app.filecache";
       file = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), file);
-      BUCommon.FileCache fc = new BUCommon.FileCache();
-
-      if (File.Exists(file))
-        { fc.load(file); }
-
+      BUCommon.FileCache fc = null;
+      if (System.IO.File.Exists(file + ".json"))
+        { fc = BUCommon.FileCache.Load(file + ".json"); }
+      else
+        {
+          if (System.IO.File.Exists(file + ".xml"))
+            {
+              fc = BUCommon.FileCache.Load(file + ".xml");
+              fc.save(file + ".json");
+            }
+          else
+            { fc = BUCommon.FileCache.Load(file + ".json"); }
+        }
+      
       acctlst.filecache = fc;
 
       foreach(var a in acctlst) { Load(acctlst, a); }
@@ -46,10 +55,9 @@ namespace BackupLib
       file = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), file);
       accounts.save(file);
 
-      file = "b2app.filecache.xml";
+      file = "b2app.filecache.json";
       file = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), file);
       accounts.filecache.save(file);
-
     }
 
     public static void Load(BUCommon.AccountList accounts, BUCommon.Account account)

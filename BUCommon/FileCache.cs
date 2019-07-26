@@ -7,13 +7,59 @@ namespace BUCommon
   using System.Globalization;
   using System.IO;
   using Microsoft.EntityFrameworkCore;
+  using Newtonsoft.Json;
 
   public class FileCache
   {
+    public class ContList
+    {
+      public List<Container> containers {get;set;}
+      public ContList() { this.containers = new List<Container>(); }
+    }
+
+    public static FileCache Load(string file)
+    {
+      var fn = System.IO.Path.GetFileName(file);
+      var path = file.Substring(0,file.Length - fn.Length);
+      var db = CacheDBContext.Build(path);
+      var cache = new FileCache(db);
+
+      /* migrate to .json */
+      if (string.Compare(".xml", System.IO.Path.GetExtension(file), true) == 0)
+        {
+          Console.WriteLine("loading old files...");
+          var oldStorage = Version1_0Storage.Build(file);
+
+          foreach(var c in oldStorage.containers) 
+            {
+              Console.WriteLine("loading {0} {1} -> {2}", c.id, c.name, c.files.Count);
+              cache.add(c); 
+            }
+        }
+      else
+        {
+          if (System.IO.File.Exists(file))
+            {
+              var str = System.IO.File.ReadAllText(file);
+              var containers = Newtonsoft.Json.JsonConvert.DeserializeObject<ContList>(str);
+              foreach(var c in containers.containers)
+                { cache.add(c); }
+            }
+        }
+      
+      return cache;
+    }
+
     private CacheDBContext _db;
     private List<Container> _containers;
 
-    public FileCache() { _containers = new List<Container>(); }
+    public IReadOnlyList<Container> containers { get { return _containers; } }
+
+    protected FileCache(CacheDBContext db)
+    {
+      _containers = new List<Container>();
+      _db = db;
+    }
 
     public void add(FreezeFile ff)
     {
@@ -22,20 +68,16 @@ namespace BUCommon
       if (ff.container == null)
         {
           oldf = _db.Files
-            .Where(x =>    (x.container == null)
-                        && (   (!string.IsNullOrWhiteSpace(x.fileID) && x.fileID == ff.fileID) 
-                            || (string.IsNullOrWhiteSpace(x.fileID) && x.path == ff.path)
-                            )
+            .Where(x =>    (!string.IsNullOrWhiteSpace(x.fileID) && x.fileID == ff.fileID)
+                        || (string.IsNullOrWhiteSpace(x.fileID) && x.path == ff.path)
                    )
             .FirstOrDefault();
         }
       else
         {
           oldf = _db.Files
-            .Where(x =>    (   x.container != null 
-                               && (   x.accountID == ff.container.accountID 
-                                   && x.containerID == ff.container.id))
-                           )
+            .Where(x =>    (   x.accountID == ff.container.accountID 
+                            && x.containerID == ff.container.id)
                         && (   (!string.IsNullOrWhiteSpace(x.fileID) && x.fileID == ff.fileID) 
                             || (string.IsNullOrWhiteSpace(x.fileID) && x.path == ff.path)
                             )
@@ -45,18 +87,18 @@ namespace BUCommon
 
       if (oldf == null) 
         {
-          var dbf = new Models.ContFile();
+          oldf = new Models.ContFile();
           
           if (ff.container != null)
             {
-              dbf.accountID = ff.container.accountID;
-              dbf.containerID = ff.container.containerID;
+              oldf.accountID = ff.container.accountID;
+              oldf.containerID = ff.container.id;
             }
           
-          dbf.fileID = ff.fileID;
-          dbf.path = ff.path;
+          oldf.fileID = ff.fileID;
+          oldf.path = ff.path;
 
-          oldf = _db.Files.Add(ff);
+          _db.Files.Add(oldf);
         }
       
       if (oldf.enchash != ff.enchash) { oldf.enchash = ff.enchash; }
@@ -102,12 +144,14 @@ namespace BUCommon
         { _containers.Add(cont); oldc=cont; }
       
       cont.files.Clear();
-      foreach(var f in _files
-                  .Where(x => x.container != null && x.container.id == oldc.id && x.container.accountID == oldc.accountID))
+      /*
+      foreach(var f in _db.Files
+                  .Where(x => x.containerID == oldc.id && x.accountID == oldc.accountID))
         {
-          cont.files.Add(f); 
+          cont.files.Add(f);
           f.container = cont;
         }
+      */
 
       return cont;
     }
@@ -122,22 +166,23 @@ namespace BUCommon
       if (c1 != null) 
         { 
           _containers.Remove(c1);
-          BUCommon.FreezeFile ff = _files.Where(x => x.container.id == c1.id && x.container.accountID == c1.accountID).FirstOrDefault();
+          var ff = _db.Files.Where(x => x.containerID == c1.id && x.accountID == c1.accountID).FirstOrDefault();
           while(ff != null)
             {
-              _files.Remove(ff);
-              ff = _files.Where(x => x.container.id == c1.id && x.container.accountID == c1.accountID).FirstOrDefault();
+              _db.Files.Remove(ff);
+              _db.SaveChanges();
+              ff = _db.Files.Where(x => x.containerID == c1.id && x.accountID == c1.accountID).FirstOrDefault();
             }
         }
     }
 
     public void delete(FreezeFile file)
     {
-      var fs1 = _files
+      var fs1 = _db.Files
           .Where(    x => x.fileID== file.fileID 
                  && (file.container != null 
-                      ? x.container == null
-                      : x.container.id == file.container.id && x.container.accountID== file.container.accountID))
+                      ? string.IsNullOrWhiteSpace(x.containerID)
+                      : x.containerID == file.container.id && x.accountID== file.container.accountID))
           .ToList();
       if (fs1.Any())
         {
@@ -147,147 +192,110 @@ namespace BUCommon
         }
     }
 
-    public IReadOnlyList<FreezeFile> getContainer(long accountID, string id, string name)
+    public IQueryable<FreezeFile> getContainer(long accountID, string id, string name)
     {
-      var cont = _db.Containers.Where(x => x.accountID == accountID 
-                  && (  (!string.IsNullOrWhiteSpace(id) && x.containerID == id)
-                      || (string.IsNullOrWhiteSpace(id) && string.Compare(x.name, name, true) == 0)))
-                      .FirstOrDefault();
+      System.Func<Models.Hash, Hash> hashAct = (Models.Hash h) => h == null ? null : Hash.FromString(h.type, h.base64);
+      var cont = _containers.Where(x => 
+                     (accountID == 0 || x.accountID == accountID)
+                  && (string.IsNullOrWhiteSpace(id) || x.id == id)
+                  && (string.IsNullOrWhiteSpace(name) || string.Compare(x.name, name, true) == 0)
+                  )
+                  .ToList();
 
-      if (cont == null) { return new FreezeFile[0]{}; }
+      if (!cont.Any()) 
+        { return (IQueryable<FreezeFile>)(new List<FreezeFile>()); }
 
-      var files = _db.Files
-        .Where(x => x.containerID == cont.id)
-        .Select(g => new FreezeFile { });
-      return files.ToList();
+      var files = 
+        from f in _db.Files
+        join h in _db.Hashes on f.localHashID equals h.id
+          into fhg from f1 in fhg.DefaultIfEmpty()
+        join h2 in _db.Hashes on f.storedHashID equals h2.id
+          into fh2g from f2 in fh2g.DefaultIfEmpty()
+        where cont.Where(c => f.containerID == c.id).Any()
+        select new FreezeFile { 
+            path=f.path
+            ,mimeType = f.mimeType
+            ,storedHash = hashAct(fhg.FirstOrDefault())
+            , localHash = hashAct(fh2g.FirstOrDefault())
+            , fileID=f.fileID
+            , modified = f.modified
+            , uploaded = f.uploaded
+            , serviceInfo = f.serviceInfo
+            , enchash = f.enchash
+            , containerID = f.containerID
+            };
+      
+      return files;
     }
 
     public IReadOnlyList<Container> getContainers(long accountID)
     {
-      var cont = _db.Containers.Where(x => x.accountID == accountID).ToList();
+      var cont = _containers.Where(x => x.accountID == accountID).ToList();
       return cont;
     }
 
     public IReadOnlyList<FreezeFile> getdir(string folder)
     {
+      System.Func<Models.Hash, Hash> hashAct = (Models.Hash h) => h == null ? null : Hash.FromString(h.type, h.base64);
+
       var lst = 
         from f in _db.Files
+        join h in _db.Hashes on f.localHashID equals h.id
+          into fhg from f1 in fhg.DefaultIfEmpty()
+        join h2 in _db.Hashes on f.storedHashID equals h2.id
+          into fh2g from f2 in fh2g.DefaultIfEmpty()
         where CultureInfo.InvariantCulture.CompareInfo.IsPrefix(f.path, folder, CompareOptions.IgnoreCase)
-        select f;
+        select new FreezeFile { 
+            path=f.path
+            ,mimeType = f.mimeType
+            ,storedHash = hashAct(fhg.FirstOrDefault())
+            , localHash = hashAct(fh2g.FirstOrDefault())
+            , fileID=f.fileID
+            , modified = f.modified
+            , uploaded = f.uploaded
+            , serviceInfo = f.serviceInfo
+            , enchash = f.enchash
+            , containerID = f.containerID
+            };
 
       return lst.ToList();
     }
 
     public void save(string file)
     {
+      var fn = System.IO.Path.GetFileName(file);
+      var path = file.Substring(0,file.Length - fn.Length);
       /*
-      var fn = System.IO.Path.GetFileName(file);
-      var path = file.Substring(0,file.Length - fn.Length);
       var db = CacheDBContext.Build(path);
-
       */
+
+      var lst = new ContList();
+      foreach(var c in _containers)
+        { lst.containers.Add(new Container { id=c.id, accountID=c.accountID, name=c.name, type=c.type }); }
+      
+      var str = Newtonsoft.Json.JsonConvert.SerializeObject(lst);
+      var wr = new System.IO.FileStream(file, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+      var swr = new StreamWriter(wr);
+      swr.Write(str);
+      swr.Close();
+      swr.Dispose();
     }
 
-    public void load(string file)
-    {
-      var fn = System.IO.Path.GetFileName(file);
-      var path = file.Substring(0,file.Length - fn.Length);
-      _db = CacheDBContext.Build(path);
-
-      /* migrate to .json */
-      if (string.Compare(".xml", System.IO.Path.GetExtension(file), true) == 0)
-        {
-          var oldStorage = Version1_0Storage.Build(file);
-
-          foreach(var c in oldStorage.containers)
-            {
-              add(c);
-            }
-        }
-    }
-
-    private void _writeFiles(CacheDBContext db)
-    {
-      foreach(var f in this._files)
-        {
-          var f1 = (
-            from cf in db.Files
-            join c1 in db.Containers on cf.containerID equals c1.id
-            where cf.fileID == f.fileID && c1.containerID == f.containerID
-            select cf
-            )
-            .FirstOrDefault();
-          
-          if (f1 == null)
-            {
-              Models.Container c = _makeContainer(db, f.container);
-
-              f1 = new Models.ContFile
-                {
-                  path = f.path
-                  ,mimeType = f.mimeType
-                  , fileID = f.fileID
-                  , containerID = c.id
-                };
-              db.Files.Add(f1);
-              db.SaveChanges();
-            }
-          
-          if (f1.path != f.path) { f1.path = f.path; }
-          if (f1.mimeType != f.mimeType) { f1.mimeType = f.mimeType; }
-          if (f1.modified != f.modified) { f1.modified = f.modified; }
-          if (f1.uploaded != f.uploaded) { f1.uploaded = f.uploaded; }
-          if (f1.serviceInfo != f.serviceInfo) { f1.serviceInfo = f.serviceInfo; }
-          if (f1.enchash != f.enchash) { f1.enchash = f.enchash; }
-
-          Models.Hash sh = _makeHashRec(db, f.storedHash);
-          Models.Hash lh = _makeHashRec(db, f.localHash);
-          f1.storedHashID = sh?.id;
-          f1.localHashID = lh?.id;
-          
-          var e = db.Entry(f1);
-          if (e.State == EntityState.Modified || e.State == EntityState.Added)
-            {
-              db.SaveChanges();
-            }
-        }
-    }
-
-    private Models.Hash _makeHashRec(CacheDBContext db, Hash h)
+    private Models.Hash _makeHashRec(Hash h)
     {
       Models.Hash sh = null;
       if (h != null && !string.IsNullOrWhiteSpace(h.type) && !string.IsNullOrWhiteSpace(h.base64))
         {
-          sh = db.Hashes.Where(x => x.base64 == h.base64 && x.type == h.type).FirstOrDefault();
+          sh = _db.Hashes.Where(x => x.base64 == h.base64 && x.type == h.type).FirstOrDefault();
           if (sh == null )
             {
               sh = new Models.Hash { base64=h.base64, type=h.type };
-              db.Hashes.Add(sh);
-              db.SaveChanges();
+              _db.Hashes.Add(sh);
+              _db.SaveChanges();
             }
         }
       
       return sh;
     }
-    private Models.Container _makeContainer(CacheDBContext db, Container c)
-    {
-      Models.Container c1 = null;
-      c1 = db.Containers.Where(x => x.containerID == c.id && x.type == c.type && x.accountID == c.accountID).FirstOrDefault();
-      if (c1 == null)
-        {
-          c1 = new Models.Container 
-            {
-              type=c.type
-              , accountID = c.accountID
-              , name=c.name
-              , containerID = c.id
-            };
-          db.Containers.Add(c1);
-          db.SaveChanges();
-        }
-      
-      return c1;
-    }
-
   }
 }
