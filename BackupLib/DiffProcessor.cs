@@ -132,11 +132,7 @@ namespace BackupLib
                         else 
                           {
                             ff.localHash = x.local.localHash;
-                            lock(cache) 
-                              {
-                                cache.add(x.local);
-                                cache.add(ff);
-                              }
+                            lock(cache) { cache.add(ff); }
                           }
                         break;
                       }
