@@ -83,13 +83,15 @@ b2_get_download_authorization
     public void setParams(string connstr)
     {
       var parts = BUCommon.FileSvcBase.ParseConnStr(connstr);
-      var opts = new B2Net.Models.B2Options();
-      opts.AccountId = parts[0].Trim();
-      opts.ApplicationKey = parts[1].Trim();
+      var opts = new B2Net.Models.B2Options()
+        {
+          KeyId = parts[0].Trim()
+          ,ApplicationKey = parts[1].Trim()
+        };
       
-      opts.AuthorizationToken = account.auth["AuthorizationToken"];
-      opts.DownloadUrl = account.auth["DownloadUrl"];
-      opts.ApiUrl = account.auth["ApiUrl"];
+      //opts.AuthorizationToken = account.auth["AuthorizationToken"];
+      //opts.DownloadUrl = account.auth["DownloadUrl"];
+      //opts.ApiUrl = account.auth["ApiUrl"];
 
       /*
       opts.AuthorizationToken = "<token>";
@@ -143,7 +145,7 @@ b2_get_download_authorization
     {
       var opts = new B2Net.Models.B2Options
         {
-          AccountId=_opts.AccountId
+          KeyId=_opts.AccountId
           , ApplicationKey = _opts.ApplicationKey
         };
       _client = new B2Client(opts);
@@ -183,12 +185,20 @@ b2_get_download_authorization
         files = _client.Files.GetList(startfile, null, cont.id).Result;
         foreach(var f in files.Files)
           {
+            BUCommon.Hash h = null;
+            try {
+              h = BUCommon.Hash.FromString("SHA1", f.ContentSHA1);
+            } catch(FormatException fe)
+              {
+                h = BUCommon.Hash.Create("", new byte[]{});
+              }
+            
             var ff = new BUCommon.FreezeFile
               {
                path = f.FileName
                , uploaded = f.UploadTimestampDate
                , fileID = f.FileId
-               , storedHash = BUCommon.Hash.FromString("SHA1", f.ContentSHA1)
+               , storedHash = h
                , mimeType = f.ContentType
                , serviceInfo = f.Action
                ,container = cont
@@ -462,7 +472,7 @@ b2_get_download_authorization
       /* setup a new 'authorize' */
       var opts = new B2Net.Models.B2Options
         {
-          AccountId=_opts.AccountId
+          KeyId=_opts.AccountId
           , ApplicationKey = _opts.ApplicationKey
         };
       data.client = new B2Client(opts);
