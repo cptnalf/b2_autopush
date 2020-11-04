@@ -194,7 +194,7 @@ namespace BUCommon
 
     public IQueryable<FreezeFile> getContainer(long accountID, string id, string name)
     {
-      System.Func<Models.Hash, Hash> hashAct = (Models.Hash h) => h == null ? null : Hash.FromString(h.type, h.base64);
+      System.Func<Models.Hash, Hash> hashAct = (Models.Hash h) => h == null ? null : Hash.Create(h.type, h.base64);
       var cont = _containers.Where(x => 
                      (accountID == 0 || x.accountID == accountID)
                   && (string.IsNullOrWhiteSpace(id) || x.id == id)
