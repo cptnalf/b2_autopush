@@ -16,7 +16,11 @@ namespace BUCommon
     
     public static Hash FromString(string type, string hash)
     {
-      byte[] bytes = Enumerable
+      byte[] bytes = null;
+
+      if (!string.IsNullOrWhiteSpace(hash))
+        bytes = 
+      Enumerable
         .Range(0, hash.Length)
         .Where(x => x % 2 == 0)
         .Select(x => Convert.ToByte(hash.Substring(x, 2), 16))
