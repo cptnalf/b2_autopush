@@ -59,6 +59,11 @@ b2_get_download_authorization
   /// </summary>
   public class Connection : BUCommon.IFileSvc
   {
+    public static void CheckOptions(string user, string pw)
+    {
+      /* not really sure what to validate */
+    }
+
     private const string LAST_MOD_MILLIS = "src_last_modified_millis";
     private const string LOCALHASH = "saa_localhash";
 

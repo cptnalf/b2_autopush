@@ -8,6 +8,6 @@ namespace BackupLib
   using BUCommon;
   public interface IFileLister
   {
-    IReadOnlyList<FreezeFile> getList(string root);
+    IReadOnlyList<FreezeFile> getList(string root, string exclude, string filter);
   }
 }
