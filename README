@@ -1,8 +1,0 @@
-C# application to push local files to a backblaze b2 storage bucket.
-
-compares local folders to remote bucket to figure out which files need to be uploaded. uses an RSA key to encrypt AES key which is used to encrypt the contents of the files sent to B2.
-
-caches files sent so that subsequent compares don't generate a lot of API traffic. b2 charges for API calls. (google and amazon do as well, to a lesser extent)
-b2 is a pretty real-time call-response setup though.
-
-1st stab, just use a plain xml serialization of the data.
