@@ -87,7 +87,12 @@ namespace BackupLib
     {
       var path = string.Empty;
       if (string.IsNullOrWhiteSpace(file.fileID)) 
-        { path = Path.Combine(container.id,file.path.Replace('/', '\\')); }
+        {
+          var str1 = file.path;
+          if (System.Environment.OSVersion.Platform != System.PlatformID.Unix)
+            { str1 = file.path.Replace('/', '\\'); }
+          path = Path.Combine(container.id,str1);
+        }
       else { path = file.fileID; }
 
       {
@@ -99,9 +104,14 @@ namespace BackupLib
 
       FileStream strm = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite| FileShare.Delete);
       int len = await IOUtils.WriteStream(contents, strm);
-      contents.Seek(0, SeekOrigin.Begin);
+      strm.Flush();
+      strm.Seek(0, SeekOrigin.Begin);
       var hasha = (System.Security.Cryptography.HashAlgorithm)System.Security.Cryptography.CryptoConfig.CreateFromName("SHA256");
-      var hash = hasha.ComputeHash(contents);
+      var hash = hasha.ComputeHash(strm);
+      
+      strm.Close();
+      strm.Dispose();
+      strm = null;
 
       var ff = new FreezeFile
         {
