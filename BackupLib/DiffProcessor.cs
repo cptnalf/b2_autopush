@@ -42,7 +42,7 @@ namespace BackupLib
     public bool noAction {get;set;}
     public RunType runType {get;set;}
 
-    public DiffProcessor() { maxTasks=12; }
+    public DiffProcessor() { }
 
     public void add(FileDiff d) { _diffs.Add(d); }
     public void add(IEnumerable<FileDiff> ds) { _diffs.AddRange(ds); }
@@ -50,6 +50,8 @@ namespace BackupLib
     public void run()
     {
       byte[] keyfile;
+      maxTasks = BUCommon.IOUtils.DefaultTasks(maxTasks);
+
       {
         var kt = new MemoryStream();
         var fs = new FileStream(encKey, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
@@ -61,7 +63,6 @@ namespace BackupLib
         keyfile = kt.ToArray();
       }
 
-      if (maxTasks <= 0 || maxTasks > 100) { maxTasks =0; }
       if (noAction) 
         {
           maxTasks = 1;

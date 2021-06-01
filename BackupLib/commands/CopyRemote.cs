@@ -33,7 +33,7 @@ namespace BackupLib.commands
     public void run()
     {
       var ll = new LocalLister();
-      var localfiles = ll.getList(pathRoot);
+      var localfiles = ll.getList(pathRoot, null, fileRE);
 
       if (!string.IsNullOrWhiteSpace(fileRE))
         {

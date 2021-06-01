@@ -36,6 +36,8 @@ namespace BackupLib.commands
 
     public void run()
     {
+      maxTasks = IOUtils.DefaultTasks(maxTasks);
+
       var cmp = (new DirectoryCompare 
         { 
           account=account
@@ -47,6 +49,7 @@ namespace BackupLib.commands
           ,exclude = excludeRE
           ,useHash=checksum
           , privateKey=privateKey
+          , maxTasks = maxTasks
           })
         .run();
       
@@ -61,7 +64,7 @@ namespace BackupLib.commands
           Regex reex = new Regex(excludeRE, RegexOptions.Compiled| RegexOptions.IgnoreCase);
           cmp = cmp.Where(x => !reex.IsMatch(x.local != null ? x.local.path : x.remote.path)).ToList();
         }
-
+      
       /* start with creates, updates, then deletes. */
       var dp = new DiffProcessor 
         { 

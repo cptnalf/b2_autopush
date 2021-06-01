@@ -11,6 +11,9 @@ namespace BUCommon
 
   public static class IOUtils
   {
+    /** default tasks to 5. */
+    public static int DefaultTasks(int cur) { return (cur <= 0 || cur > 64) ? 5 : cur; }
+
     public static async Task<byte[]> ReadStream(this Stream strm)
     {
       MemoryStream mm = new MemoryStream();
@@ -23,12 +26,13 @@ namespace BUCommon
     {
       if (!dest.CanWrite) { throw new ArgumentException("Dest stream is not writable!"); }
       int len = 0;
-      byte[] buf = new byte[4096];
+      byte[] buf = new byte[1024 * 1024];
       int sz = 0;
+      var m = new Memory<byte>(buf);
 
       do {
-        sz = await src.ReadAsync(buf, 0,buf.Length);
-        if (sz > 0) { await dest.WriteAsync(buf,0,sz); len +=sz; }
+        sz = await src.ReadAsync(m);
+        if (sz > 0) { await dest.WriteAsync(buf,0,sz); len += sz; }
       } while(sz > 0);
 
       return len;

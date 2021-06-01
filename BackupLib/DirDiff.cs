@@ -35,10 +35,13 @@ namespace BackupLib
     public bool usehash {get;set;}
     public string privateKey {get;set;}
     public string pathRoot {get;set;}
+    public int maxTasks {get;set;}
 
     public IReadOnlyList<FileDiff> compare(IReadOnlyList<FreezeFile> local, IReadOnlyList<FreezeFile> provider)
     {
       List<FileDiff> files = new List<FileDiff>();
+
+      maxTasks = IOUtils.DefaultTasks(maxTasks);
 
       var dels = 
         from pf in provider 
@@ -75,7 +78,7 @@ namespace BackupLib
           }
 
           var tasks = Parallel.ForEach(lst
-        ,new ParallelOptions { MaxDegreeOfParallelism=5}
+        ,new ParallelOptions { MaxDegreeOfParallelism=maxTasks}
         ,() => 
         {
           var sr = new StreamReader(new MemoryStream(keyfile, 0, keyfile.Length, false, false));

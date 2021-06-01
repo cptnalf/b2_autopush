@@ -21,15 +21,18 @@ namespace BackupLib.commands
 
     public string filter {get;set;}
     public string exclude {get;set;}
+    public int maxTasks {get;set;}
 
     public IReadOnlyList<FileDiff> run()
     {
       Regex reex = null;
       Regex re = null;
 
+      maxTasks = BUCommon.IOUtils.DefaultTasks(maxTasks);
+
       var ll = new LocalLister();
 
-      var localfiles = ll.getList(pathRoot);
+      var localfiles = ll.getList(pathRoot, exclude, filter);
 
       var remoteFiles = 
         (new FileList 
@@ -57,6 +60,7 @@ namespace BackupLib.commands
           dd.privateKey = privateKey;
           dd.pathRoot = pathRoot;
         }
+      dd.maxTasks = this.maxTasks;
 
       var diffs = dd.compare(localfiles, remoteFiles);
 
