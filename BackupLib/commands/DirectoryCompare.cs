@@ -42,14 +42,12 @@ namespace BackupLib.commands
       if (!string.IsNullOrWhiteSpace(filter)) 
         { 
           re = new Regex(filter, RegexOptions.Compiled| RegexOptions.IgnoreCase); 
-          localfiles = localfiles.Where(x => re.IsMatch(x.path)).ToList();
           remoteFiles = remoteFiles.Where(x => re.IsMatch(x.path)).ToList();
         }
       
       if (!string.IsNullOrWhiteSpace(exclude))
         {
           reex = new Regex(exclude, RegexOptions.Compiled| RegexOptions.IgnoreCase);
-          localfiles = localfiles.Where(x => !reex.IsMatch(x.path)).ToList();
           remoteFiles = remoteFiles.Where(x => !reex.IsMatch(x.path)).ToList();
         }
       

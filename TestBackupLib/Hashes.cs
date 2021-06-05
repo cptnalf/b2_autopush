@@ -1,5 +1,7 @@
 ﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using TestClass = NUnit.Framework.TestFixtureAttribute;
+using TestMethod = NUnit.Framework.TestAttribute;
+using NUnit.Framework;
 
 namespace TestBackupLib
 {
@@ -41,7 +43,7 @@ namespace TestBackupLib
       string b2nethash = B2Net.Utilities.GetSHA1Hash(filebytes);
 
 
-      Assert.AreEqual(hash.base64, filehash.base64);
+      Assert.That(hash.base64, Is.EqualTo(filehash.base64));
       
     }
 

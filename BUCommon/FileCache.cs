@@ -228,6 +228,39 @@ namespace BUCommon
       return files;
     }
 
+    public IQueryable<FreezeFile> getContNoHash(long accountID, string id, string name)
+    {
+      System.Func<Models.Hash, Hash> hashAct = (Models.Hash h) => h == null ? null : Hash.Create(h.type, h.base64);
+      var cont = _containers.Where(x => 
+                     (accountID == 0 || x.accountID == accountID)
+                  && (string.IsNullOrWhiteSpace(id) || x.id == id)
+                  && (string.IsNullOrWhiteSpace(name) || string.Compare(x.name, name, true) == 0)
+                  )
+                  .ToList();
+
+      if (!cont.Any()) 
+        { return (IQueryable<FreezeFile>)(new List<FreezeFile>()); }
+
+      var files = 
+        from f in _db.Files
+        where cont.Where(c => f.containerID == c.id).Any()
+        select new FreezeFile { 
+            path=f.path
+            ,mimeType = f.mimeType
+            ,storedHash = null
+            , localHash = null
+            , fileID=f.fileID
+            , modified = f.modified
+            , uploaded = f.uploaded
+            , serviceInfo = f.serviceInfo
+            , enchash = f.enchash
+            , containerID = f.containerID
+            };
+      
+      return files;
+    }
+
+
     public IReadOnlyList<Container> getContainers(long accountID)
     {
       var cont = _containers.Where(x => x.accountID == accountID).ToList();

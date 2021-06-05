@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace TestBackupLib
 {
-  using Microsoft.VisualStudio.TestTools.UnitTesting;
-
+using TestClass = NUnit.Framework.TestFixtureAttribute;
+using TestMethod = NUnit.Framework.TestAttribute;
+  using NUnit.Framework;
   using Encoding = System.Text.Encoding;
   using System.Security.Cryptography;
 
@@ -28,7 +29,7 @@ namespace TestBackupLib
       keyfile.Dispose();
       keyfile = null;
 
-      Assert.IsNotNull(o);
+      Assert.That(o, Is.Not.Null);
 
       return o;
     }
@@ -42,8 +43,8 @@ namespace TestBackupLib
       Assert.IsNotNull(p);
       Assert.IsFalse(p.IsPrivate);
       var rsak = p as Org.BouncyCastle.Crypto.Parameters.RsaKeyParameters;
-      Assert.IsNotNull(rsak);
-      Assert.IsFalse(rsak.IsPrivate);
+      Assert.That(rsak, Is.Not.Null);
+      Assert.That(rsak.IsPrivate, Is.False);
     }
 
     [TestMethod]
@@ -65,7 +66,7 @@ namespace TestBackupLib
         CollectionAssert.AreEqual(rsaparams.Modulus, exp.Modulus);
         CollectionAssert.AreEqual(rsaparams.Exponent, exp.Exponent);
       }
-      Assert.AreEqual<int>(2048,rsa.KeySize);
+      Assert.That(rsa.KeySize, Is.EqualTo(2048));
       /*
       http://stackoverflow.com/questions/21702662/system-security-cryptography-cryptographicexception-bad-length-in-rsacryptoser
       * sigh. had i known that i can't encrypt a shitton with RSA
@@ -74,8 +75,8 @@ namespace TestBackupLib
       */
       var data = Encoding.UTF8.GetBytes(_STRING2ENC);
       var bytes = rsa.Encrypt(data, RSAEncryptionPadding.OaepSHA1);
-      Assert.IsNotNull(bytes);
-      Assert.IsTrue(bytes.Length > 0);
+      Assert.That(bytes, Is.Not.Null);
+      Assert.That(bytes.Length, Is.Positive);
 
       var b64 = Convert.ToBase64String(bytes);
       //Assert.AreEqual(_ENCSTRING, b64,false);
@@ -98,12 +99,12 @@ namespace TestBackupLib
       var o = _pemRead(_PRIVATEKEY);
 
       var p = o as Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair;
-      Assert.IsNotNull(p);
+      Assert.That(p, Is.Not.Null);
 
-      Assert.IsNotNull(p.Private);
-      Assert.IsNotNull(p.Public);
+      Assert.That(p.Private, Is.Not.Null);
+      Assert.That(p.Public, Is.Not.Null);
       var rsap = p.Private as Org.BouncyCastle.Crypto.Parameters.RsaPrivateCrtKeyParameters;
-      Assert.IsNotNull(rsap);
+      Assert.That(rsap, Is.Not.Null);
     }
 
     [TestMethod]
@@ -111,7 +112,7 @@ namespace TestBackupLib
     {
       var p = _pemRead(_PRIVATEKEY) as Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair;
       var rsap = p.Private as Org.BouncyCastle.Crypto.Parameters.RsaPrivateCrtKeyParameters;
-      Assert.IsNotNull(rsap);
+      Assert.That(rsap, Is.Not.Null);
 
       var rsa = RSA.Create();
       {
@@ -133,7 +134,7 @@ namespace TestBackupLib
         var decdata = rsa.Decrypt(data, RSAEncryptionPadding.OaepSHA1);
         var str = System.Text.Encoding.UTF8.GetString(decdata);
 
-        Assert.AreEqual(_STRING2ENC, str, false);
+        Assert.That(str, Is.EqualTo(_STRING2ENC).IgnoreCase);
       }
     }
 
@@ -148,8 +149,8 @@ namespace TestBackupLib
       var data = Encoding.UTF8.GetBytes(_STRING2ENC);
       var bytes = rsapub.Encrypt(data, RSAEncryptionPadding.OaepSHA1);
 
-      Assert.IsNotNull(bytes);
-      Assert.IsTrue(bytes.Length > 0);
+      Assert.That(bytes, Is.Not.Null);
+      Assert.That(bytes.Length, Is.Positive);
 
       keystrm = new MemoryStream();
       _loadStream(keystrm, _PRIVATEKEY);
@@ -158,7 +159,7 @@ namespace TestBackupLib
 
       data = rsapvt.Decrypt(bytes, RSAEncryptionPadding.OaepSHA1);
       var str = Encoding.UTF8.GetString(data);
-      Assert.AreEqual(_STRING2ENC, str);
+      Assert.That(str, Is.EqualTo(_STRING2ENC));
     }
 
     [TestMethod]
@@ -167,6 +168,8 @@ namespace TestBackupLib
       var aes = Aes.Create();
 
       var keybytes = Convert.FromBase64String(_AESKEY);
+var bigkey = Convert.FromBase64String("nJQuhsoxAcbe44pSz0DodGs+eCSSP++mcx1+58S+m68=");
+var bigiv  = Convert.FromBase64String("7hBgnG+6BGhznZxNSKIwn/ogV9RLI2+dmEFud7Yce1Q=");
 
       aes.Mode = CipherMode.CBC;
       aes.Padding = PaddingMode.PKCS7;
@@ -174,6 +177,11 @@ namespace TestBackupLib
 
       aes.Key = keybytes;
       aes.IV = Convert.FromBase64String(_AESIV);
+
+      Console.WriteLine("{0} => {1}, {2}", keybytes.Length, bigkey.Length, aes.BlockSize);
+      aes.KeySize = bigkey.Length * 8;
+      aes.Key = bigkey;
+      //aes.IV = bigiv;
 
       var srcBytes = Encoding.UTF8.GetBytes(_PUBKEY);
       var instrm = new MemoryStream(srcBytes);
@@ -188,11 +196,12 @@ namespace TestBackupLib
       cs.Dispose();
       cs = null;
 
-      Assert.IsNotNull(encbytes);
-      Assert.IsTrue(encbytes.Length > 0);
+      Assert.That(encbytes, Is.Not.Null);
+      Assert.That(encbytes.Length, Is.Positive);
 
       var newarr = Convert.ToBase64String(encbytes);
-      Assert.AreEqual(_AESENC, newarr);
+      Assert.That(newarr, Is.EqualTo(_AESENC));
+      //age: https://github.com/FiloSottile/age
     }
 
     [TestMethod]
@@ -217,10 +226,10 @@ namespace TestBackupLib
       cs.Dispose();
       cs = null;
 
-      Assert.IsTrue(deststrm.Length > 0);
+      Assert.That(deststrm.Length, Is.Positive);
 
       var str = Encoding.UTF8.GetString(deststrm.ToArray());
-      Assert.AreEqual(_PUBKEY, str);
+      Assert.That(str, Is.EqualTo(_PUBKEY));
     }
 
     private void _loadStream(Stream strm, string str)

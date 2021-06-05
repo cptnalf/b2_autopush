@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace TestBackupLib
 {
-  using Microsoft.VisualStudio.TestTools.UnitTesting;
+using TestClass = NUnit.Framework.TestFixtureAttribute;
+using TestMethod = NUnit.Framework.TestAttribute;
+  using Assert = NUnit.Framework.Assert;
 
   /// <summary>
   /// will probably need to construct an upload server that dumps files to 
@@ -40,7 +42,7 @@ namespace TestBackupLib
     {
       var res = _totalTime();
       res.Wait();
-      Assert.IsTrue( res.Result > 0);
+      Assert.That( res.Result > 0);
     }
   }
 }

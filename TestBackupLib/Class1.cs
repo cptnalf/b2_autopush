@@ -5,7 +5,10 @@ using System.Threading.Tasks;
 
 namespace TestBackupLib
 {
-  using Microsoft.VisualStudio.TestTools.UnitTesting;
+using TestClass = NUnit.Framework.TestFixtureAttribute;
+using TestMethod = NUnit.Framework.TestAttribute;
+  using NUnit.Framework;
+
   using System.IO;
   using Regex = System.Text.RegularExpressions.Regex;
   using FreezeFile = BUCommon.FreezeFile;
@@ -13,8 +16,6 @@ namespace TestBackupLib
   [TestClass]
   public class Class1
   {
-    public TestContext tc {get;set; }
-
     public Class1()
     {
     }
@@ -25,7 +26,7 @@ namespace TestBackupLib
       var FileRE = new Regex("^c:[\\\\]");
 
       var ll = new BackupLib.LocalLister();
-      var fl = ll.getList("c:\\tmp");
+      var fl = ll.getList("c:\\tmp", null, null);
 
       Assert.IsNotNull(fl);
       Assert.IsTrue(fl.Count > 0);
@@ -41,7 +42,7 @@ namespace TestBackupLib
     public void TestDirDiff()
     {
       var ll = new BackupLib.LocalLister();
-      var fl = ll.getList("c:\\tmp");
+      var fl = ll.getList("c:\\tmp", null, null);
       
       var dd = new BackupLib.DirDiff();
 
@@ -68,7 +69,7 @@ namespace TestBackupLib
     public void TestDirDiffD()
     {
       var ll = new BackupLib.LocalLister();
-      var fl = ll.getList("c:\\tmp");
+      var fl = ll.getList("c:\\tmp", null, null);
       
       var fl2 = new List<FreezeFile>(fl);
       fl2.Add(new FreezeFile { path="blarg/foo.jpg" });

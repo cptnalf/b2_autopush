@@ -1,5 +1,7 @@
 ﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using TestClass = NUnit.Framework.TestFixtureAttribute;
+using TestMethod = NUnit.Framework.TestAttribute;
+using NUnit.Framework;
 
 namespace TestBackupLib
 {
@@ -14,12 +16,9 @@ namespace TestBackupLib
       acct.id=1;
       acct.name = "localtest";
       var acctlst = new BUCommon.AccountList();
-      acctlst.filecache = new BUCommon.FileCache();
+      acctlst.filecache = BUCommon.FileCache.Load(@"c:\tmp\b2test\cache_sync.json");
 
       System.IO.Directory.CreateDirectory(@"c:\tmp\b2test\cont1");
-
-      if (System.IO.File.Exists(@"c:\tmp\b2test\cache_sync.xml"))
-        { acctlst.filecache.load(@"c:\tmp\b2test\cache_sync.xml"); }
       
       BackupLib.AccountBuilder.Load(acctlst, acct);
       acctlst.Add(acct);
@@ -46,8 +45,8 @@ namespace TestBackupLib
       var conts = new BackupLib.commands.Containers { account=acct, cache=accts.filecache};
       conts.run();
 
-      Assert.IsNotNull(accts.filecache.containers);
-      Assert.IsTrue(accts.filecache.containers.Count > 0);
+      Assert.That(accts.filecache.containers, Is.Not.Null);
+      Assert.That(accts.filecache.containers, Is.Not.Empty);
     }
 
     [TestMethod]
@@ -57,12 +56,6 @@ namespace TestBackupLib
       var acct = accts.accounts[0];
       bool haveCache = false;
 
-      if (System.IO.File.Exists(@"c:\tmp\b2test\cache_sync.xml"))
-        { 
-          haveCache = true;
-          accts.filecache.load(@"c:\tmp\b2test\cache_sync.xml"); 
-        }
-
       var conts = new BackupLib.commands.Containers { account=acct, cache=accts.filecache};
       conts.run();
 
@@ -71,10 +64,10 @@ namespace TestBackupLib
       var cr = new BackupLib.commands.FileList 
         { account=acct, cache=accts.filecache, container=cont, useRemote=!haveCache };
       var res = cr.run();
-      Assert.IsNotNull(res);
-      Assert.IsTrue(res.Count > 0, "Maybe run a sync first?");
+      Assert.That(res, Is.Not.Null);
+      Assert.That(res, Is.Not.Empty, "Maybe run a sync first?");
 
-      accts.filecache.save(@"c:\tmp\b2test\cache_sync.xml");
+      //accts.filecache.save(@"c:\tmp\b2test\cache_sync.xml");
     }
 
 
@@ -117,8 +110,8 @@ namespace TestBackupLib
           rmt = cont.files[0];
         }
 
-      Assert.IsNotNull(rmt);
-      Assert.IsNotNull(rmt.fileID);
+      Assert.That(rmt, Is.Not.Null);
+      Assert.That(rmt.fileID, Is.Not.Null);
 
       var cl = new BackupLib.commands.CopyLocal
         {

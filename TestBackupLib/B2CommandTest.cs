@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+using TestMethod = NUnit.Framework.TestAttribute;
 
 namespace TestBackupLib
 {
-  [TestClass]
+  using NUnit.Framework;
+  
+  [TestFixture]
   public class B2CommandTest
   {
     private BUCommon.AccountList _accts = null;
@@ -40,10 +43,7 @@ namespace TestBackupLib
       var cont = acct.service.fileCache.containers.Where(x => x.accountID== acct.id).FirstOrDefault();
       if (cont == null) { Assert.Fail("no containers in cache!"); }
       
-      var file = acct.service.fileCache.files
-        .Where(   x => x.container != null 
-               && x.container.accountID == cont.accountID 
-               && x.container.id == cont.id )
+      var file = acct.service.fileCache.getdir(cont.name)
         .FirstOrDefault();
 
       bool rmt = true;
@@ -51,8 +51,8 @@ namespace TestBackupLib
 
       var filelist = new BackupLib.commands.FileList { account=acct, cache=acct.service.fileCache, container=cont, useRemote=rmt};
       var res = filelist.run();
-      Assert.IsNotNull(res);
-      Assert.IsTrue(res.Any(), "No files were found! (check remote for files)");
+      Assert.That(res, Is.Not.Null);
+      Assert.That(res, Is.Not.Empty, "No files were found! (check remote for files)");
     }
 
     [TestMethod]
@@ -103,7 +103,7 @@ namespace TestBackupLib
       cr.run();
     }
 
-    [TestMethod]
+    [Test]
     public void CmdCopyLocal()
     {
       var acct = _getAcct();
@@ -131,7 +131,7 @@ namespace TestBackupLib
       cl.run();
     }
 
-    [TestCleanup]
+    [TearDown]
     public void _cleanup()
     {
       if (_accts != null)

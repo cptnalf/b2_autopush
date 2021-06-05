@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+using TestClass = NUnit.Framework.TestFixtureAttribute;
+using TestMethod = NUnit.Framework.TestAttribute;
+using NUnit.Framework;
 
 namespace TestBackupLib
 {
@@ -47,14 +50,14 @@ namespace TestBackupLib
       BUCommon.AccountList accts = BackupLib.AccountBuilder.BuildAccounts();
       var acct = accts.accounts.FirstOrDefault();
       
-      Assert.IsNotNull(acct);
-      Assert.AreEqual("CommB2.Connection", acct.svcName);
+      Assert.That(acct, Is.Not.Null);
+      Assert.That(acct.svcName, Is.EqualTo("CommB2.Connection"));
 
-      Assert.IsNotNull(acct.service);
+      Assert.That(acct.service, Is.Not.Null);
       //acct.service.open();
 
       var conts = acct.service.getContainers();
-      Assert.IsNotNull(conts);
+      Assert.That(conts, Is.Not.Null);
     }
 
     [TestMethod]
@@ -62,12 +65,12 @@ namespace TestBackupLib
     {
       BUCommon.AccountList accts = BackupLib.AccountBuilder.BuildAccounts();
       var acct = accts.accounts.FirstOrDefault();
-      Assert.AreEqual("CommB2.Connection", acct.svcName);
+      Assert.That( acct.svcName, Is.EqualTo("CommB2.Connection"));
       acct.service.authorize();
 
       var cont = acct.service.getContainers().FirstOrDefault();
       
-      Assert.IsNotNull(cont);
+      Assert.That(cont, Is.Not.Null);
       string srcfile = "c:\\tmp\\photos\\2016\\1231-newyears\\DSC06562.ARW";
       var ff = new BUCommon.FreezeFile { path="2016/1231-newyears/DSC06562.ARW" };
 
@@ -75,7 +78,7 @@ namespace TestBackupLib
       var fe = new BackupLib.FileEncrypt(rsa);
       var fs = ff.readStream("c:\\tmp\\photos");
       var encstrm = fe.encrypt(fs);
-      var sha1 = System.Security.Cryptography.SHA1Cng.Create();
+      var sha1 = System.Security.Cryptography.SHA1.Create();
 
       var res = sha1.ComputeHash(encstrm);
       encstrm.Seek(0, System.IO.SeekOrigin.Begin);
@@ -87,17 +90,6 @@ namespace TestBackupLib
       Assert.AreEqual(2017,ff.uploaded.Year);
       Assert.AreEqual(now.Month, ff.uploaded.Month);
       Assert.AreEqual(now.Day, ff.uploaded.Day);
-    }
-
-    [TestMethod]
-    public void UploadCacheTest()
-    {
-      BUCommon.FileCache uc = new BUCommon.FileCache();
-      uc.load("C:\\tmp\\photos.cache");
-
-      var files = uc.getdir("2016");
-      Assert.IsNotNull(files);
-      Assert.IsTrue(files.Any());
     }
   }
 }

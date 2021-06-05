@@ -31,12 +31,12 @@ namespace BackupLib.commands
       if (account == null)
         {
           if (container == null) { filesSrc = cache.getContainer(0, null, null); }
-          else { filesSrc = cache.getContainer(container.accountID, container.id, null); }
+          else { filesSrc = cache.getContNoHash(container.accountID, container.id, null); }
         }
       else
         {
           if (container == null) { filesSrc = cache.getContainer(account.id, null, null); }
-          else { filesSrc = cache.getContainer(account.id, container.id, null); }
+          else { filesSrc = cache.getContNoHash(account.id, container.id, null); }
         }
 
 
