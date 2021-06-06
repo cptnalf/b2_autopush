@@ -121,24 +121,37 @@ using TestMethod = NUnit.Framework.TestAttribute;
     [TestMethod]
     public void TestFileEncrypt()
     {
+      var sw = new System.Diagnostics.Stopwatch();
+      sw.Start();
       var rsa = _loadRSA(Encrypting._PUBKEY);
 
       BackupLib.FileEncrypt enc = new BackupLib.FileEncrypt(rsa);
       //var srcfile = new FileStream("c:\\tmp\\foo.txt"/*"c:\\temp\\dumps\\ttirdreport.20170116_134248.xml"*/, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-      var srcfile = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(Encrypting._PUBKEY));
+      //var srcfile = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(Encrypting._PUBKEY));
+      var srcfile = new FileStream("/data2/photos/source/alpha7/2020/09-oregon/0930/DSC00773.ARW"
+      ,FileMode.Open, FileAccess.Read, FileShare.Delete|FileShare.ReadWrite);
+      
       var encbytes = enc.encrypt(srcfile);
       
       /* persist the encrypted file. */
-      var destfile = new FileStream("c:\\tmp\\encfile.enc", FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+      var destpath = "c:\\tmp\\encfile.enc";
+      if (System.Environment.OSVersion.Platform == PlatformID.Unix)
+        { destpath = "/data2/temp/foo.net.tst"; }
+      var destfile = new FileStream(destpath, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
       encbytes.WriteTo(destfile);
       destfile.Flush();
       encbytes.Seek(0, SeekOrigin.Begin);
 
       destfile.Dispose();
+      destfile = null;
+      srcfile = null;
+      sw.Stop();
+      TestContext.Progress.WriteLine("enc took {0:00}m {1:00}.{2:000}s", sw.Elapsed.Minutes, sw.Elapsed.Seconds, sw.Elapsed.Milliseconds);
 
       var b64 = Convert.ToBase64String(encbytes.ToArray());
     }
-   
+
+
     [TestMethod]
     public void TestFileDecrypt()
     {
