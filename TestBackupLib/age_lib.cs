@@ -10,13 +10,13 @@ namespace TestBackupLib
   using FileAccess = System.IO.FileAccess;
   using FileMode = System.IO.FileMode;
   using FileShare = System.IO.FileShare;
+  using MemoryStream = System.IO.MemoryStream;
 
   public class Starter
   {
     public System.IO.Stream src1 {get;set;}
     public System.IO.Stream dest1 {get;set;}
-    public System.IO.Stream src2 {get;set;}
-    public System.IO.Stream dest2 {get;set;}
+    public bool noclosedest {get;set;}
   }
 
   [TestFixture]
@@ -28,6 +28,10 @@ namespace TestBackupLib
     {
       var fname = _writeRecipients();
       var srcfile = "/data2/photos/source/alpha7/2020/09-oregon/0930/DSC00773.ARW";
+      var destfile = "/data2/temp/b2app.test.foo.age";
+
+      Assert.That(System.IO.File.Exists(srcfile), Is.True);
+      Assert.That(System.IO.File.Exists("/home/chiefengineer/releases/age/age"), Is.True);
 
       var p = new Process();
       p.StartInfo = new ProcessStartInfo();
@@ -43,11 +47,14 @@ namespace TestBackupLib
       p.StartInfo.RedirectStandardInput = true;
       p.StartInfo.RedirectStandardOutput = true;
 
+      var sw = new System.Diagnostics.Stopwatch();
+      sw.Start();
+
       p.Start();
 #if use_stdin_age
       var src = new FileStream(srcfile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite|FileShare.Delete);
 #endif
-      var dest = new FileStream("/data2/temp/b2app.test.foo.age", FileMode.Create, FileAccess.Write, FileShare.ReadWrite|FileShare.Delete);
+      var dest = new MemoryStream();
 
 #if false
       TestContext.Progress.WriteLine("dump src to dest via copyto");
@@ -61,6 +68,7 @@ namespace TestBackupLib
           {
             src1 = src
             ,dest1 = p.StandardInput.BaseStream
+            ,noclosedest = false
           };
         t.Start(obj);
       }
@@ -70,6 +78,7 @@ namespace TestBackupLib
           {
             src1 = p.StandardOutput.BaseStream
             ,dest1 = dest
+            ,noclosedest = true
           };
         t2.Start(obj);
       }
@@ -92,13 +101,39 @@ namespace TestBackupLib
       t.Join();
       t2.Join();
       System.IO.File.Delete(fname);
+      sw.Stop();
+
+      var destf = new FileStream("/data2/temp/b2app.test.foo.age", FileMode.Create, FileAccess.Write, FileShare.ReadWrite|FileShare.Delete);
+      dest.Seek(0, System.IO.SeekOrigin.Begin);
+      dest.CopyTo(destf);
+      dest.Close();
+      dest = null;
+      destf.Close();
+      destf = null;
+      
+      TestContext.Progress.WriteLine("took: {0:00}m {1:00}.{2:000}s", sw.Elapsed.Minutes, sw.Elapsed.Seconds, sw.Elapsed.Milliseconds);
+      Assert.That(System.IO.File.Exists(fname), Is.False);
+      Assert.That(System.IO.File.Exists(destfile), Is.True);
     }
 
     private static void _FooStart(object args)
     {
+      var strms = args as Starter;
+
+      strms.src1.CopyTo(strms.dest1);
+      strms.dest1.Flush();
+
+      if (!strms.noclosedest)
+        {
+          strms.dest1.Close();
+          strms.src1.Close();
+          strms.dest1 = null;
+        }
+      strms.src1 = null;
+      
+      /*
       var b1 = new byte[16384];
       var m1 = new Memory<byte>(b1);
-      var strms = args as Starter;
       long l1 = 0;
 
       while(true)
@@ -121,6 +156,7 @@ namespace TestBackupLib
                 }
             }
         }
+      */
     }
 
     private string _writeRecipients()

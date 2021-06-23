@@ -235,19 +235,6 @@ namespace BackupLib
     }
 
     /// <summary>
-    /// decrypt the contents of an encrypted file.
-    /// </summary>
-    /// <param name="instrm">the encrypted file contents (all)</param>
-    /// <param name="strm">place to put the decrpyted file</param>
-    public void decrypt(byte[] instrm, FileStream strm)
-    { 
-      var mstrm = new MemoryStream(instrm);
-      decrypt(mstrm, strm);
-      mstrm.Dispose();
-      mstrm = null;
-    }
-
-    /// <summary>
     /// decrypt the contents of and encrypted file.
     /// </summary>
     /// <param name="instrm">encrypted file</param>
