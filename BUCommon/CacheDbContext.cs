@@ -93,6 +93,8 @@ namespace BUCommon
       ffEntity.Property(x => x.uploaded)
         .IsRequired();
 
+      ffEntity.HasIndex(x => new { x.accountID, x.containerID, x.id });
+
       // hashes
       var he = modelBuilder.Entity<Models.Hash>();
       he.HasKey(x => x.id);

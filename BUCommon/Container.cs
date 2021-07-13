@@ -27,6 +27,11 @@ namespace BUCommon
     /// <summary>container specific type-information</summary>
     public string type {get;set;}
 
+    /// <summary>encryption type.</summary>
+    /// (blank,empty,whitespace = built-in)
+    /// AGE = age, must have binary configured. key arg is either: receipient, or private key.
+    public string encType {get;set;}
+
     public List<FreezeFile> files {get;set;}
 
     [XmlIgnore]

@@ -16,7 +16,7 @@ namespace BackupLib.commands
          the remote path.  optional '--force-remote' forces the program
          to pull the contents of the container before sync'ing.
 ";
-    
+    public AccountList accountList {get;set;}
     public Account account {get;set;}
     public FileCache cache {get;set;}
     public Container container {get;set;}
@@ -77,6 +77,7 @@ namespace BackupLib.commands
           , progressHandler=progress
           , errorHandler=excepts
           , runType=RunType.upload
+          , agePath = accountList.AgePath
         };
 
       dp.add(cmp.Where(x => x.type == DiffType.created));

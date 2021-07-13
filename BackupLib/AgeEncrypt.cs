@@ -5,6 +5,24 @@ using System.Diagnostics;
 
 namespace BackupLib.Age
 {
+  public class AgeEncryptBuilder : BaseEncryptBuilder
+  {
+    private string _keypath;
+    public string AgePath {get;set;}
+    public AgeEncryptBuilder() {}
+
+    public override void init(string keyfile)
+    { _keypath = keyfile; }
+    public override BaseEncrypt build()
+    {
+      
+      var fe = new AgeEncrypt();
+      fe.AgePath = this.AgePath;
+      fe.ReceipientFile = this._keypath;
+      return fe;
+    }
+  }
+
   /// encryption using 'age' external program.
   public class AgeEncrypt : BaseEncrypt
   {
@@ -27,7 +45,8 @@ namespace BackupLib.Age
     public void writeRecipients(string srcKey)
     {
       var p = new Process();
-      p.StartInfo = new ProcessStartInfo(Path.Combine(this.AgePath, AGEKEYGEN_BIN_NAME), string.Format("-y {0}", srcKey));
+      var p1 = this.AgePath.Replace(AGE_BIN_NAME, AGEKEYGEN_BIN_NAME);
+      p.StartInfo = new ProcessStartInfo(p1, string.Format("-y {0}", srcKey));
       p.StartInfo.UseShellExecute = false;
       p.StartInfo.RedirectStandardOutput = true;
 
@@ -60,7 +79,7 @@ namespace BackupLib.Age
       var p = new Process();
       p.StartInfo = new ProcessStartInfo();
       p.StartInfo.WorkingDirectory = this.WorkingDir; //"/data2/temp";
-      p.StartInfo.FileName = Path.Combine(this.AgePath, AGE_BIN_NAME); //"/home/chiefengineer/releases/age/age";
+      p.StartInfo.FileName = this.AgePath; //"/home/chiefengineer/releases/age/age";
       p.StartInfo.Arguments = args;
 
       p.StartInfo.UseShellExecute = false;

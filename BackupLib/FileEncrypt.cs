@@ -8,6 +8,7 @@ namespace BackupLib
   using System.Security.Cryptography;
   using Stream = System.IO.Stream;
   using FileStream = System.IO.FileStream;
+  using StreamReader = System.IO.StreamReader;
   using MemoryStream = System.IO.MemoryStream;
   using SeekOrigin = System.IO.SeekOrigin;
   using Encoding = System.Text.Encoding;
@@ -27,7 +28,36 @@ namespace BackupLib
     * encrypted content.
     */
   
-  public class FileEncrypt
+  public class FileEncryptBuilder : BaseEncryptBuilder
+  {
+    private byte[] _cont;
+
+    public override void init(string keyFile)
+    {
+      var kt = new MemoryStream();
+      var fs = new FileStream(keyFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+      var len = BUCommon.IOUtils.WriteStream(fs,kt).Result;
+      fs.Close();
+      fs.Dispose();
+      fs = null;
+
+      _cont = kt.ToArray();
+    }
+
+    public override BaseEncrypt build()
+    {
+      var sr = new StreamReader(new MemoryStream(_cont, 0, _cont.Length, false, false));
+      var rsa = KeyLoader.LoadRSAKey(sr);
+
+      var fe1 = new FileEncrypt(rsa);
+      sr = null; 
+
+      return fe1;
+    }
+
+  }
+
+  public class FileEncrypt : BaseEncrypt
   {
     internal class FileHeader
     {
@@ -121,42 +151,6 @@ namespace BackupLib
       _algo = null;
     }
 
-    /// <summary>
-    /// computes the hash of the given stream.
-    /// </summary>
-    /// <param name="strm"></param>
-    /// <returns></returns>
-    public BUCommon.Hash hashContents(Stream strm)
-    {
-      var hasha = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-      strm.Seek(0, SeekOrigin.Begin);
-      var res = _computeHash(strm, hasha);
-      hasha.Dispose();
-      strm.Seek(0, SeekOrigin.Begin);
-      return BUCommon.Hash.Create(HashAlgorithmName.SHA256.Name, res);
-    }
-
-    /// <summary>
-    /// computes the hash of the given stream.
-    /// </summary>
-    /// <param name="strm"></param>
-    /// <returns></returns>
-    public BUCommon.Hash hashContents(string hashAlgo, Stream strm)
-    {
-      var algo = HashAlgorithmName.MD5;
-      if (hashAlgo == HashAlgorithmName.SHA1.Name) { algo = HashAlgorithmName.SHA1; }
-      if (hashAlgo == HashAlgorithmName.SHA256.Name) { algo = HashAlgorithmName.SHA256; }
-      if (hashAlgo == HashAlgorithmName.SHA384.Name) { algo = HashAlgorithmName.SHA384; }
-      if (hashAlgo == HashAlgorithmName.SHA512.Name) { algo = HashAlgorithmName.SHA512; }
-      
-      var hasha = IncrementalHash.CreateHash(algo);
-      strm.Seek(0, SeekOrigin.Begin);
-      var res = _computeHash(strm, hasha);
-      hasha.Dispose();
-      strm.Seek(0, SeekOrigin.Begin);
-      return BUCommon.Hash.Create(algo.Name, res);
-    }
-
     public byte[] encBytes(byte[] foo)
     {
       if (foo.Length > _rsa.KeySize) 
@@ -174,7 +168,7 @@ namespace BackupLib
     /// </summary>
     /// <param name="instrm"></param>
     /// <returns>memory stream containing the encrypted file</returns>
-    public MemoryStream encrypt(Stream instrm)
+    public override MemoryStream encrypt(Stream instrm)
     {
       var strm = new MemoryStream();
       _hash = HashAlgorithmName.SHA256;
@@ -245,7 +239,7 @@ namespace BackupLib
     /// and then the contents will be verified via the hash
     /// embeded in the encrypted file's header.
     /// </remarks>
-    public void decrypt(Stream instrm, FileStream strm)
+    public override void decrypt(Stream instrm, FileStream strm)
     {
       byte[] origHash = null;
       IncrementalHash incHash;
@@ -328,43 +322,6 @@ namespace BackupLib
       
       strm.Write(lenk, 0, 4);
       strm.Write(bytes, 0, bytes.Length);
-    }
-
-    /// <summary>
-    /// compute the hash of a stream
-    /// </summary>
-    /// <param name="strm"></param>
-    /// <param name="hash"></param>
-    /// <returns>hash bytes</returns>
-    /// <remarks>
-    /// this attempts to return the stream to the position it started from
-    /// this makes it easy to compute the hash of a file, then directly
-    /// read from the file for encryption/transmission/etc.
-    /// </remarks>
-    private byte[] _computeHash(Stream strm, IncrementalHash hash)
-    {
-      if (!strm.CanRead) { return null; }
-      long curpos = strm.Position;
-
-      _writeBytesToHash(strm, hash);
-      var hashoenc = hash.GetHashAndReset();
-
-      if (strm.CanSeek) { strm.Seek(curpos, System.IO.SeekOrigin.Begin); }
-
-      return hashoenc;
-    }
-
-    private void _writeBytesToHash(Stream strm, IncrementalHash hash)
-    {
-      if (!strm.CanRead) { return; }
-
-      byte[] buffer = new byte[100 * 1024];
-      int lread = 0;
-      do {
-        lread = strm.Read(buffer, 0, buffer.Length);
-        if (lread > 0)
-          { hash.AppendData(buffer,0, lread); }
-      } while(lread > 0);      
     }
     
     private void _writeStream(Stream instrm, Stream outStrm) { _writeStream(instrm, outStrm, 100 * 1024); }

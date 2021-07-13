@@ -16,7 +16,7 @@ namespace b2app
     {
       Console.WriteLine("Accounts:");
 
-      foreach(var acc in accts)
+      foreach(var acc in accts.accounts)
         {
           Console.WriteLine("{0} - {1} ({2})", acc.name, acc.svcName, acc.connStr);
         }

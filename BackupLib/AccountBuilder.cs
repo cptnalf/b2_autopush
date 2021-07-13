@@ -44,7 +44,7 @@ namespace BackupLib
       
       acctlst.filecache = fc;
 
-      foreach(var a in acctlst) { Load(acctlst, a); }
+      foreach(var a in acctlst.accounts) { Load(acctlst, a); }
 
       return acctlst;
     }

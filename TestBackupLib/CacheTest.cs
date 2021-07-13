@@ -82,7 +82,7 @@ using TestMethod = NUnit.Framework.TestAttribute;
       Assert.That(accts, Is.Not.Null);
       Assert.That(accts.filecache, Is.Not.Null);
       Assert.That(accts.accounts, Is.Not.Empty);
-      foreach(var acct in accts)
+      foreach(var acct in accts.accounts)
         {
           Assert.That(acct.service, Is.Not.Null);
           Assert.That(acct.auth, Is.Not.Null);
@@ -103,6 +103,41 @@ using TestMethod = NUnit.Framework.TestAttribute;
       BackupLib.AccountBuilder.Save(accts);
     }
 
+    private void _testCurCache(string name, BUCommon.FileCache cache
+      ,IReadOnlyList<BUCommon.Container> conts
+      , Func<BUCommon.FileCache,BUCommon.Container, IQueryable<FreezeFile>> testMeth)
+    {
+      var timepercont = new Dictionary<string, TimeSpan>();
+      var sw = new System.Diagnostics.Stopwatch();
+
+      int x = 0;
+      do {
+      foreach(var c in conts)
+        {
+          //var files = cache.getContainer(c.accountID, c.id, null);
+          var files = testMeth(cache, c);
+          sw.Start();
+          var q = files.ToList();
+          sw.Stop();
+
+          if (!timepercont.ContainsKey(c.id)) { timepercont.Add(c.id, new TimeSpan()); }
+          timepercont[c.id] += sw.Elapsed;
+          
+          //ms += sw.Elapsed;
+          //cnt += q.Count;
+        }
+        ++x;
+      }while(x < 5);
+
+      //TestContext.Progress.WriteLine("{0} files: {1}", c.name, cnt);
+      foreach(var k in timepercont.Keys)    
+        {
+          var ms = timepercont[k];
+          TestContext.Progress.WriteLine("{3} filelist: {0:00}m {1:00}.{2:000}s"
+            , ms.Minutes, ms.Seconds, ms.Milliseconds, name);
+        }
+    }
+
     [Test]
     public void TestCurCacheLoad()
     {
@@ -117,20 +152,16 @@ using TestMethod = NUnit.Framework.TestAttribute;
             sw.Elapsed.Milliseconds / 10);
       TestContext.Progress.WriteLine("containers: {0}", conts.Count);
       long cnt = 0;
-      TimeSpan ms = new TimeSpan();
-      foreach(var c in conts)
+      //TimeSpan ms = new TimeSpan();
+      _testCurCache("getContainer", cache, conts, (fc, c) => 
         {
-          var files = cache.getContainer(c.accountID, c.id, null);
-          sw.Start();
-          var q = files.ToList();
-          sw.Stop();
-          ms += sw.Elapsed;
-          cnt += q.Count;
-          
-          TestContext.Progress.WriteLine("{0} files: {1}", c.name, cnt);
-          TestContext.Progress.WriteLine("filelist: {0:00}m {1:00}.{2:000}s", ms.Minutes, ms.Seconds, ms.Milliseconds);
-        }
-      
+          return fc.getContainer(c.accountID, c.id, null);
+        });
+
+      _testCurCache("getContNoHash", cache, conts, (fc, c) =>
+        {
+          return fc.getContNoHash(c.accountID, c.id, null);
+        });
     }
 
     [Test]

@@ -8,7 +8,7 @@ namespace BUCommon
 {
   using System.Xml.Serialization;
 
-  public class AccountList : IEnumerable<Account>
+  public class AccountList //: IEnumerable<Account>
   {
     [XmlIgnore]
     private long _maxID = 0;
@@ -16,6 +16,8 @@ namespace BUCommon
     [XmlIgnore]
     public FileCache filecache {get;set;}
     public List<Account> accounts {get;set; }
+    public string AgePath {get;set; } 
+
     public AccountList() { this.accounts = new List<Account>(); }
 
     public void Add(object o)
@@ -48,8 +50,24 @@ namespace BUCommon
     /// <param name="file"></param>
     public void load(string file)
     {
-      var accts = XmlUtils.ReadXml<AccountList>(file, new Type[] { typeof(Account), typeof(AuthStorage), typeof(AuthStorage.Pair)});
-      this.accounts = (accts == null ? this.accounts : (accts.accounts != null ? accts.accounts : this.accounts));
+      AccountList accts = null;
+      bool tryagain = false;
+      try {
+        accts = XmlUtils.ReadXml<AccountList>(file, new Type[] { typeof(Account), typeof(AuthStorage), typeof(AuthStorage.Pair)});
+        this.accounts = (accts == null ? this.accounts : (accts.accounts != null ? accts.accounts : this.accounts));
+        this.AgePath = accts.AgePath;
+      }
+      catch(System.InvalidOperationException ioe)
+        { tryagain = true; }
+      
+      if (tryagain)
+        {
+          /* try to load the original list. */
+          var x = XmlUtils.ReadXml<Account[]>(file, new Type[]{typeof(Account), typeof(AuthStorage), typeof(AuthStorage.Pair)});
+
+          this.accounts.Clear();
+          this.accounts.AddRange(x);
+        }
 
       _maxID = this.accounts.Any() ? this.accounts.Max((x)=> x.id) : 0;
     }
@@ -59,9 +77,11 @@ namespace BUCommon
     /// </summary>
     /// <param name="file"></param>
     public void save(string file)
-    { XmlUtils.WriteXml(file, this, new Type[] { typeof(Account), typeof(AuthStorage), typeof(AuthStorage.Pair)}); }
+    {
+      XmlUtils.WriteXml(file, this, new Type[] { typeof(Account), typeof(AuthStorage), typeof(AuthStorage.Pair)}); 
+    }
 
-    public IEnumerator<Account> GetEnumerator() { return this.accounts.GetEnumerator(); }
-    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { return this.accounts.GetEnumerator(); }
+    //public IEnumerator<Account> GetEnumerator() { return this.accounts.GetEnumerator(); }
+    //System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { return this.accounts.GetEnumerator(); }
   }
 }

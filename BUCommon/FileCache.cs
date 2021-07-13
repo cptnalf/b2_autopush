@@ -304,9 +304,9 @@ namespace BUCommon
 
       var lst = new ContList();
       foreach(var c in _containers)
-        { lst.containers.Add(new Container { id=c.id, accountID=c.accountID, name=c.name, type=c.type }); }
+        { lst.containers.Add(new Container { id=c.id, accountID=c.accountID, name=c.name, type=c.type, encType=c.encType}); }
       
-      var str = Newtonsoft.Json.JsonConvert.SerializeObject(lst);
+      var str = Newtonsoft.Json.JsonConvert.SerializeObject(lst, Formatting.Indented);
       var wr = new System.IO.FileStream(file, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
       var swr = new StreamWriter(wr);
       swr.Write(str);

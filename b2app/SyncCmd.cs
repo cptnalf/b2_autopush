@@ -17,13 +17,14 @@ namespace b2app
       var account = _getAcct(accounts,_opts.account); 
       var cont = accounts.filecache.containers
         .Where(x => x.accountID==account.id && x.name == _opts.container)
-        .ToList();
+        .FirstOrDefault();
 
       var cmd = new BackupLib.commands.Sync 
         { 
-            account=account
+            accountList = accounts
+          , account=account
           , cache=accounts.filecache
-          , container=cont.FirstOrDefault()
+          , container=cont
           , progress=_printDiff
           , excepts = _printExcept
 
@@ -40,6 +41,7 @@ namespace b2app
 
       Console.WriteLine("Account: {0}", account.name);
       Console.WriteLine("Container: {0}", cmd.container.name);
+      Console.WriteLine("Encrypting using {0}", cont.encType == "AGE" ? "age" : "built-in");
 
       cmd.run();
       

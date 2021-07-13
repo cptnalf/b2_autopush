@@ -26,7 +26,7 @@ namespace BackupLib
   {
     internal class TLocalData
     {
-      internal FileEncrypt fe {get;set;}
+      internal BaseEncrypt fe {get;set;}
       internal object auth {get;set;}
     }
     
@@ -41,6 +41,7 @@ namespace BackupLib
     public string root {get;set;}
     public bool noAction {get;set;}
     public RunType runType {get;set;}
+    public string agePath {get;set;}
 
     public DiffProcessor() { }
 
@@ -49,19 +50,18 @@ namespace BackupLib
 
     public void run()
     {
-      byte[] keyfile;
+      BaseEncryptBuilder bldr = null;
       maxTasks = BUCommon.IOUtils.DefaultTasks(maxTasks);
-
-      {
-        var kt = new MemoryStream();
-        var fs = new FileStream(encKey, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        var len = BUCommon.IOUtils.WriteStream(fs,kt).Result;
-        fs.Close();
-        fs.Dispose();
-        fs = null;
-
-        keyfile = kt.ToArray();
-      }
+      if (container.encType == "AGE")
+        {
+          bldr = new Age.AgeEncryptBuilder { AgePath = this.agePath };
+          bldr.init(encKey);          
+        }
+      else 
+        {
+          bldr = new FileEncryptBuilder();
+          bldr.init(encKey);
+        }
 
       if (noAction) 
         {
@@ -76,11 +76,7 @@ namespace BackupLib
         ,new ParallelOptions { MaxDegreeOfParallelism=maxTasks}
         ,() => 
         {
-          var sr = new StreamReader(new MemoryStream(keyfile, 0, keyfile.Length, false, false));
-          var rsa = KeyLoader.LoadRSAKey(sr);
-
-          var fe1 = new FileEncrypt(rsa);
-          sr = null;
+          BaseEncrypt fe1 = bldr.build();
           object td = null;
           if (!noAction)
             { td = service.threadStart(); }
@@ -122,7 +118,7 @@ namespace BackupLib
                         x.local.localHash = tl.fe.hashContents("SHA1", memstrm);
                         memstrm.Seek(0, System.IO.SeekOrigin.Begin);
 
-                        byte[] buf = tl.fe.encBytes(x.local.localHash.raw);
+                        byte[] buf = x.local.localHash.raw; //tl.fe.encBytes(x.local.localHash.raw);
                         var b64 = Convert.ToBase64String(buf);
                         var ff = service.uploadFile(tl.auth, container, x.local, memstrm, b64);
                         memstrm.Dispose();

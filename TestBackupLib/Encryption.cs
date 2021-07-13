@@ -27,6 +27,7 @@ namespace TestBackupLib
 
       var fe = new BackupLib.FileEncrypt(kl);
       var fstream = _setupInFile();
+      var inhash = fe.hashContents("SHA256", fstream);
       var dest = fe.encrypt(fstream);
       
       fstream.Dispose();
@@ -37,10 +38,13 @@ namespace TestBackupLib
       var test_out = _setupOutFile(BASIC_DESTNAME);
       fe.decrypt(dest, test_out);
 
+      test_out.Seek(0, SeekOrigin.Begin);
+      var outhash = fe.hashContents("SHA256", test_out);
+      
       test_out.Dispose();
       test_out = null;
       dest = null;
-      Assert.That(true);
+      Assert.That(outhash.base64, Is.EqualTo(inhash.base64));
     }
 
     [Test]
@@ -53,16 +57,27 @@ namespace TestBackupLib
       var fstream = _setupInFile();
       var dest = ae.encrypt(fstream);
 
+      var fe = new BackupLib.FileEncrypt(null);
       fstream.Dispose();
       fstream = null;
 
+      fstream = _setupInFile();
+      var inhash = fe.hashContents("SHA256", fstream);
+    
       var test_out = _setupOutFile(AGE_DESTNAME);
       ae.ReceipientFile = AGE_KEY;
       ae.decrypt(dest, test_out);
+
+      {
+        test_out.Seek(0, SeekOrigin.Begin);
+        var outhash = fe.hashContents("SHA256", test_out);
+
+        Assert.That(outhash.base64, Is.EqualTo(inhash.base64));
+      }
+
       test_out.Dispose();
       test_out = null;
       dest = null;
-      Assert.That(true);
     }
 
 

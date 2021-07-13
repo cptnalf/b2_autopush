@@ -11,7 +11,7 @@ namespace b2app
       BUCommon.Account acct = null;
       if (!string.IsNullOrWhiteSpace(account))
         {
-          acct = accts.Where(x => x.name == account).FirstOrDefault();
+          acct = accts.accounts.Where(x => x.name == account).FirstOrDefault();
         }
       return acct;
     }

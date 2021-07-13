@@ -98,8 +98,8 @@ namespace BackupLib
               var fstream = x.local.readStream(pathRoot);
               var hash = tl.fe.hashContents("SHA1", fstream);
 
-              var bytes = Convert.FromBase64String(x.remote.enchash);
-              var rhash = tl.fe.decBytes(bytes);
+              var rhash = Convert.FromBase64String(x.remote.enchash);
+              //var rhash = tl.fe.decBytes(bytes);
               for(int i=0; i < hash.raw.Length; ++i) 
                 { if (hash.raw[i] != rhash[i]) { x.type = DiffType.updated; break; } }
             }

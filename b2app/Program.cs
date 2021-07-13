@@ -48,17 +48,29 @@ namespace b2app
 
     static void Main(string[] args)
     {
-      CommandLine.Parser.Default.ParseArguments<Options.AccountsOpt,Options.AuthOpt,Options.ContOpt,Options.LSOpt,Options.SyncOpts,Options.CopyOpts, Options.AddAccountOptions>(args)
-        .MapResult(
-          (Options.AccountsOpt o) => Run(new Accounts(o))
-          ,(Options.AuthOpt o1) => Run(new Auth(o1))
-          ,(Options.ContOpt o4) => Run(new ListContainers(o4))
-          ,(Options.LSOpt o2) => Run(new ListFiles(o2))
-          ,(Options.SyncOpts o3) => Run(new Sync(o3))
-          ,(Options.CopyOpts o5) => Run(new Copy(o5))
-          ,(Options.AddAccountOptions o6) => Run(new AddAccount(o6))
-          ,(IEnumerable<Error> errs) => { foreach(var e in errs) { Console.WriteLine(e.Tag); } return 0; }
-          );
+      var types = new Type[]
+        { typeof(Options.AccountsOpt), typeof(Options.AuthOpt)
+          ,typeof(Options.ContOpt), typeof(Options.LSOpt)
+          ,typeof(Options.SyncOpts), typeof(Options.CopyOpts)
+          ,typeof(Options.AddAccountOptions), typeof(Options.ConfigOpts)
+          ,typeof(Options.EditAccountOpts)
+          ,typeof(Options.EditContainer)
+        };
+
+      var res = CommandLine.Parser.Default.ParseArguments(args, types);
+      
+      res
+        .WithParsed<Options.AccountsOpt>( (o) => Run(new Accounts(o)))
+        .WithParsed<Options.AuthOpt>(( o1) => Run(new Auth(o1)))
+        .WithParsed<Options.ContOpt>(( o4) => Run(new ListContainers(o4)))
+.WithParsed<Options.LSOpt>(( o2) => Run(new ListFiles(o2)))
+          .WithParsed<Options.SyncOpts>(( o3) => Run(new Sync(o3)))
+          .WithParsed<Options.CopyOpts>(( o5) => Run(new Copy(o5)))
+          .WithParsed<Options.AddAccountOptions>(( o6) => Run(new AddAccount(o6)))
+          .WithParsed<Options.ConfigOpts>(( o7) => Run(new ConfigCmd(o7)))
+          .WithParsed<Options.EditContainer>((o8) => Run(new EditContainer(o8)))
+          ;
+
       /*
       Console.WriteLine("options:");
       
