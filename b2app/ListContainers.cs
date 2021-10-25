@@ -16,7 +16,7 @@ namespace b2app
       var cs = accounts.filecache.getContainers(acct.id);
       Console.WriteLine("Account: {0}", acct.name);
       foreach(var c in cs)
-        { Console.WriteLine("{0} - {1}", c.name, c.type); }
+        { Console.WriteLine("{0} - {1} ({2})", c.name, c.type, c.encType); }
 
       return 0;
     }
