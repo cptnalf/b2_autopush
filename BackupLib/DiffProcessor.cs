@@ -55,7 +55,7 @@ namespace BackupLib
       if (container.encType == "AGE")
         {
           bldr = new Age.AgeEncryptBuilder { AgePath = this.agePath };
-          bldr.init(encKey);          
+          bldr.init(encKey);
         }
       else 
         {

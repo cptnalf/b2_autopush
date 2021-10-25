@@ -45,7 +45,7 @@ namespace BackupLib.Age
     public void writeRecipients(string srcKey)
     {
       var p = new Process();
-      var p1 = this.AgePath.Replace(AGE_BIN_NAME, AGEKEYGEN_BIN_NAME);
+      var p1 = System.IO.Path.Join(this.AgePath, AGEKEYGEN_BIN_NAME);
       p.StartInfo = new ProcessStartInfo(p1, string.Format("-y {0}", srcKey));
       p.StartInfo.UseShellExecute = false;
       p.StartInfo.RedirectStandardOutput = true;
@@ -79,7 +79,7 @@ namespace BackupLib.Age
       var p = new Process();
       p.StartInfo = new ProcessStartInfo();
       p.StartInfo.WorkingDirectory = this.WorkingDir; //"/data2/temp";
-      p.StartInfo.FileName = this.AgePath; //"/home/chiefengineer/releases/age/age";
+      p.StartInfo.FileName = System.IO.Path.Join(this.AgePath, AGE_BIN_NAME); //"/home/chiefengineer/releases/age/age";
       p.StartInfo.Arguments = args;
 
       p.StartInfo.UseShellExecute = false;
