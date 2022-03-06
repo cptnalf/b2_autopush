@@ -93,7 +93,8 @@ namespace BUCommon
       ffEntity.Property(x => x.uploaded)
         .IsRequired();
 
-      ffEntity.HasIndex(x => new { x.accountID, x.containerID, x.id });
+      ffEntity.HasIndex(x => new { x.accountID, x.containerID, x.id }).HasName("IDX_File_Acct");
+      ffEntity.HasIndex(x => new { x.fileID, x.path}).HasName("IDX_File_FileID");
 
       // hashes
       var he = modelBuilder.Entity<Models.Hash>();
@@ -105,6 +106,8 @@ namespace BUCommon
 	      .IsRequired();
       he.Property(x => x.base64)
 	      .IsRequired();
+
+      he.HasIndex(x => new { x.id, x.base64 }).HasName("IDX_Hashes_ID");
 
       /*
       var ce = modelBuilder.Entity<Models.Container>();
