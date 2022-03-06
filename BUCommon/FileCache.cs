@@ -61,6 +61,57 @@ namespace BUCommon
       _db = db;
     }
 
+    public void addRange(IReadOnlyList<FreezeFile> lst)
+    {
+      var contgrps = lst.GroupBy(x => x.containerID);
+      foreach(var cg in contgrps)
+        {
+          var dbfiles = _db.Files.Where(x => x.containerID == cg.Key).ToList();
+          var dbfilepaths = dbfiles.Select(x => x.path).ToList();
+          var newfiles = cg.Where(x => !dbfilepaths.Contains(x.path)).ToList();
+
+          var newff = new List<Models.ContFile>();
+          foreach(var nf in newfiles)
+            {
+              var oldf = new Models.ContFile();
+              newff.Add(oldf);
+              
+              if (nf.container != null)
+                {
+                  oldf.accountID = nf.container.accountID;
+                  oldf.containerID = nf.container.id;
+                }
+              
+              oldf.fileID = nf.fileID;
+              oldf.path = nf.path;
+              oldf.enchash = nf.enchash;
+              oldf.mimeType = nf.mimeType;
+              oldf.modified = nf.modified;
+              oldf.serviceInfo = nf.serviceInfo;
+              oldf.uploaded = nf.uploaded;
+              if (nf.localHash != null)
+                {
+                  var h = _makeHashRec(nf.localHash);
+                  if (h != null) {oldf.localHashID = h.id; }
+                }
+              if (nf.storedHash != null)
+                {
+                  var h = _makeHashRec(nf.storedHash);
+                  if (h != null) { oldf.storedHashID = h.id; }
+                }
+            }
+          
+          _db.Files.AddRange(newff);
+          _db.SaveChanges();
+
+          /* process changes. */
+          foreach(var f1 in cg.Where(x => dbfilepaths.Contains(x.path)))
+            {
+              add(f1);
+            }
+        }
+    }
+
     public void add(FreezeFile ff)
     {
       Models.ContFile oldf = null;
@@ -166,13 +217,9 @@ namespace BUCommon
       if (c1 != null) 
         { 
           _containers.Remove(c1);
-          var ff = _db.Files.Where(x => x.containerID == c1.id && x.accountID == c1.accountID).FirstOrDefault();
-          while(ff != null)
-            {
-              _db.Files.Remove(ff);
-              _db.SaveChanges();
-              ff = _db.Files.Where(x => x.containerID == c1.id && x.accountID == c1.accountID).FirstOrDefault();
-            }
+          var ffs = _db.Files.Where(x => x.containerID == c1.id && x.accountID == c1.accountID).ToList();
+          _db.Files.RemoveRange(ffs);
+          _db.SaveChanges();
         }
     }
 

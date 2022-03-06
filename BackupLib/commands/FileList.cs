@@ -80,7 +80,7 @@ namespace BackupLib.commands
 
           cache.delete(c);
           cache.add(c);
-          foreach(var f in files) { cache.add(f); }
+          cache.addRange(files);
         }
     }
   }
