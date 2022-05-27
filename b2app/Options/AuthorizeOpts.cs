@@ -7,7 +7,7 @@ namespace b2app.Options
   [Verb("authorize", HelpText ="Authorize an account")]
   public class AuthOpt
   {
-    [Option('a', Required=true, HelpText = "account name to use" )]
+    [Option('a', "account", Required=true, HelpText = "account name to use" )]
     public string account {get;set;}
   }
 }

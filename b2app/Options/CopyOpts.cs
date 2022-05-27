@@ -17,13 +17,13 @@ namespace b2app.Options
     [Value(1, Required =true, HelpText ="destination for files")]
     public string dest {get;set;}
 
-    [Option('k', Required =true, HelpText ="key file (copy remote=pub key, copy local=private key)")]
+    [Option('k', "key", Required =true, HelpText ="key file (copy remote=pub key, copy local=private key)")]
     public string key {get;set;}
 
-    [Option('f', HelpText ="Filter files to copy (.net Regular Expression)")]
+    [Option('f', "filter", HelpText ="Filter files to copy (.net Regular Expression)")]
     public string filterRE {get;set;}
 
-    [Option('n', Default =false, HelpText ="lists what files would be copied to the destination.")]
+    [Option('n', "dry-run", Default =false, HelpText ="lists what files would be copied to the destination.")]
     public bool dryrun {get;set;}
   }
 }
