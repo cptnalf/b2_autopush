@@ -225,12 +225,24 @@ namespace BUCommon
 
     public void delete(FreezeFile file)
     {
-      var fs1 = _db.Files
-          .Where(    x => x.fileID== file.fileID 
-                 && (file.container != null 
-                      ? string.IsNullOrWhiteSpace(x.containerID)
-                      : x.containerID == file.container.id && x.accountID== file.container.accountID))
-          .ToList();
+      string contid = null;
+      long acctid = 0;
+
+      if (file.container != null)
+        {
+          contid = file.container.id;
+          acctid = file.container.accountID;
+        }
+      
+
+      var fsq = _db.Files
+          .Where(x => x.fileID== file.fileID);
+      if (contid != null)
+        { fsq = fsq.Where(x => x.containerID == contid && x.accountID == acctid); }
+      else
+        { fsq = fsq.Where(x => x.containerID == null || x.containerID == string.Empty); }
+
+      var fs1 = fsq.ToList();
       if (fs1.Any())
         {
           foreach(var f in fs1) 
@@ -316,7 +328,7 @@ namespace BUCommon
 
     public IReadOnlyList<FreezeFile> getdir(string folder)
     {
-      System.Func<Models.Hash, Hash> hashAct = (Models.Hash h) => h == null ? null : Hash.FromString(h.type, h.base64);
+      System.Func<Models.Hash, Hash> hashAct = (Models.Hash h) => h == null ? null : Hash.Create(h.type, h.base64);
 
       var lst = 
         from f in _db.Files

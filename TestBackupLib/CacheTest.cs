@@ -26,11 +26,11 @@ using TestMethod = NUnit.Framework.TestAttribute;
       var ff = new FreezeFile 
         { 
           fileID="blarg"
-          , localHash=new BUCommon.Hash { type="SHA0", raw=new byte[] { 0, 22, 44, 11} } 
+          , localHash=BUCommon.Hash.FromString("SHA256", "9a35126376f514ca3eed8b7fa1e50041de59201d2c2d0dc21536110447fe3347") 
           , mimeType="application/byte-stream"
           , modified=new DateTime(2016,12,01)
           , path="blarg/blarg1.obj"
-          , storedHash=BUCommon.Hash.Create("SHA0", new byte[] { 22,44, 0, 89 })
+          , storedHash=BUCommon.Hash.FromString("SHA256", "9a35126376f514ca3eed8b7fa1e50041de59201d2c2d0dc21536110447fe3347")
           , uploaded=new DateTime(2016,12,03)
           ,container = c
         };
@@ -40,6 +40,23 @@ using TestMethod = NUnit.Framework.TestAttribute;
       return uc;
     }
     
+    [TestMethod]
+    public void TestDelete()
+    {
+      var uc = _buildCache();
+
+      var blargdir = uc.getdir("blarg");
+      var x = blargdir.FirstOrDefault();
+      var p = x.path;
+
+      // this isn't supposed to be null.
+      x.container = new BUCommon.Container { accountID=1, id="blargacct", name="blarg account", type="blarg" };
+      uc.delete(x);
+
+      blargdir = uc.getdir("blarg");
+      Assert.IsFalse(blargdir.Any());
+    }
+
     [TestMethod]
     public void TestCache()
     {

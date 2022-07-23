@@ -63,6 +63,8 @@ namespace BUCommon
     {
       if (!optionsBuilder.IsConfigured)
         { optionsBuilder.UseSqlite("Data Source=cache.db"); }
+
+      optionsBuilder.EnableSensitiveDataLogging();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

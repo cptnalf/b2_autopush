@@ -94,15 +94,22 @@ namespace BackupLib
               {
               case RunType.upload: 
                 {
-                  path = x.local.path.Replace('/', Path.DirectorySeparatorChar); 
-                  path = Path.Combine(root, path);
+                  if (x.local != null)
+                    {
+                      path = x.local.path.Replace('/', Path.DirectorySeparatorChar); 
+                      path = Path.Combine(root, path);
+                    }
 
                   switch(x.type)
                     {
                       case DiffType.deleted:
                       {
                         service.delete(x.remote);
-                        lock(cache) { cache.delete(x.remote); }
+                        lock(cache) 
+                          {
+                            x.remote.container = this.container;
+                            cache.delete(x.remote);
+                          }
                         break;
                       }
                       case DiffType.created:
@@ -177,8 +184,9 @@ namespace BackupLib
             {
               errorHandler?.Invoke(x,e);
               pls.Stop();
-              throw new ArgumentException(string.Format("Error processing file diff item. {0} - {1}", x.type
-                , (x.local != null ? x.local.path : x.remote.path))
+              throw new ArgumentException(string.Format("Error processing file diff item. {0} - {1}\n{2}", x.type
+                , (x.local != null ? x.local.path : x.remote.path)
+                ,e.StackTrace )
                 , e);
             }
           return tl;
