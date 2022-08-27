@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BackupLib
@@ -39,33 +41,21 @@ namespace BackupLib
 
     public IReadOnlyList<FileDiff> compare(IReadOnlyList<FreezeFile> local, IReadOnlyList<FreezeFile> provider)
     {
+      var sorted = new Dictionary<string,FreezeFile[]>(OSFileEqualityComparer.Comparer());
       List<FileDiff> files = new List<FileDiff>();
 
       maxTasks = IOUtils.DefaultTasks(maxTasks);
 
-      var dels = 
-        from pf in provider 
-        where local.Where((x) => string.Compare(x.path, pf.path, true) == 0).Any() == false
-        select new FileDiff { local=null, remote=pf, type=DiffType.deleted };
+      _addToDict(local, sorted);
+      _addToDict(provider, sorted);
 
-      files.AddRange(dels);
-
-      var creates =
-        from lf in local
-        where provider.Where((x) => string.Compare(x.path, lf.path, true) == 0).Any() == false
-        select new FileDiff { local=lf, remote=null, type= DiffType.created };
-
-      files.AddRange(creates);
-      
-      IEnumerable<FileDiff> updates = null;
+      byte[] keyfile;
+      BlockingCollection<FileDiff> sameHashBC = null;
+      List<Task> procHashes = null;
       if (usehash)
         {
-          var lst = 
-            from lf in local 
-            join pf in provider on lf.path equals pf.path
-            select new FileDiff{local=lf, remote=pf};
-
-          byte[] keyfile;
+          /* setup the shared things. */
+          procHashes = new List<Task>();
           {
             var kt = new MemoryStream();
             var fs = new FileStream(privateKey, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
@@ -76,51 +66,89 @@ namespace BackupLib
 
             keyfile = kt.ToArray();
           }
+          sameHashBC = new BlockingCollection<FileDiff>();
 
-          var tasks = Parallel.ForEach(lst
-        ,new ParallelOptions { MaxDegreeOfParallelism=maxTasks}
-        ,() => 
-        {
-          var sr = new StreamReader(new MemoryStream(keyfile, 0, keyfile.Length, false, false));
-          var rsa = KeyLoader.LoadRSAKey(sr);
+          var hashAct = () => {
+            /* can't share these things between threads. */
+            var sr = new StreamReader(new MemoryStream(keyfile, 0, keyfile.Length, false, false));
+            var rsa = KeyLoader.LoadRSAKey(sr);
 
-          var fe1 = new FileEncrypt(rsa);
-          sr = null;
-          return new DiffProcessor.TLocalData { fe=fe1, auth=null };
+            var fe1 = new FileEncrypt(rsa);
+
+            while(!sameHashBC.IsCompleted)
+              {
+                try {
+                  var x = sameHashBC.Take();
+
+                  if (string.IsNullOrWhiteSpace(x.remote.enchash))
+                    { x.type = x.local.modified > x.remote.uploaded ? DiffType.updated : DiffType.same; }
+                  else
+                    {
+                      x.type = DiffType.same;
+                      var fstream = x.local.readStream(pathRoot);
+                      var hash = fe1.hashContents("SHA1", fstream);
+
+                      var rhash = Convert.FromBase64String(x.remote.enchash);
+                      //var rhash = tl.fe.decBytes(bytes);
+                      for(int i=0; i < hash.raw.Length; ++i) 
+                        { if (hash.raw[i] != rhash[i]) { x.type = DiffType.updated; break; } }
+                    }
+                }
+                catch(InvalidOperationException ioe)
+                  {
+                    
+                  }
+              }
+          };
+
+          for(int i=0; i < maxTasks; ++i)
+            {
+              var t = Task.Run(hashAct);
+              procHashes.Add(t);
+            }
         }
-        ,(x,pls,tl) =>
+
+      foreach(var key in sorted.Keys)
         {
-          if (string.IsNullOrWhiteSpace(x.remote.enchash))
-            { x.type = x.local.modified > x.remote.uploaded ? DiffType.updated : DiffType.same; }
+          var lst = sorted[key];
+          if (lst[0] == null) { files.Add(new FileDiff { local=null, remote=lst[1], type=DiffType.deleted}); }
+          else if (lst[1] == null) { files.Add(new FileDiff { local=lst[0], remote=null, type=DiffType.created}); }
           else
             {
-              x.type = DiffType.same;
-              var fstream = x.local.readStream(pathRoot);
-              var hash = tl.fe.hashContents("SHA1", fstream);
-
-              var rhash = Convert.FromBase64String(x.remote.enchash);
-              //var rhash = tl.fe.decBytes(bytes);
-              for(int i=0; i < hash.raw.Length; ++i) 
-                { if (hash.raw[i] != rhash[i]) { x.type = DiffType.updated; break; } }
+              var fd = new FileDiff { local=lst[0], remote=lst[1] };
+              files.Add(fd);
+              /* base case. */
+              if (usehash) { sameHashBC.Add(fd); }
+              else
+                { fd.type = fd.local.modified > fd.remote.uploaded ? DiffType.updated : DiffType.same; }
             }
-
-          return tl;
         }
-            ,(tl) => { tl.fe = null; }
-                );
-        }
-      else
+      
+      if (usehash)
         {
-          updates =
-            from lf in local
-            join pf in provider on lf.path equals pf.path
-            where lf.modified > pf.uploaded
-            select new FileDiff { local=lf, remote=pf, type=DiffType.updated};
+          /* wait for everything to be done hashing. */
+          sameHashBC.CompleteAdding();
+          var t = Task.WhenAll(procHashes);
+          t.Wait();
         }
-
-      files.AddRange(updates);
 
       return files;
+    }
+
+    private void _addToDict(IReadOnlyList<FreezeFile> src, Dictionary<string,FreezeFile[]> dict)
+    {
+      foreach(var l in src)
+        {
+          FreezeFile[] lst;
+          if (!dict.TryGetValue(l.path, out lst))
+            {
+              lst = new FreezeFile[2];
+              dict.Add(l.path, lst);
+            }
+          
+          if (l.container == null) { lst[0] = l; }
+          else { lst[1] = l; }
+        }
     }
   }
 }

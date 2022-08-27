@@ -46,6 +46,10 @@ namespace BackupLib
     /// <param name="dir">starting directory</param>
     /// <param name="root">starting path part (can be empty or null)</param>
     /// <param name="files">the resulting list of files</param>
+    /// <remarks>
+    /// the returned FreezeFile here does not have a container.
+    /// these just include path and modified date information.
+    /// </remarks>
     private void _enum(string dir, string root, ref List<FreezeFile> files, string excludeRE, string incRE)
     {
       const string pastePath = "{0}/{1}";

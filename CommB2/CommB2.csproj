@@ -8,7 +8,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>CommB2</RootNamespace>
     <AssemblyName>CommB2</AssemblyName>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
@@ -30,9 +30,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\B2.NET\src\B2Net.csproj" AdditionalProperties="TargetFramework=$(TargetFramework)">
       <Project>{e178ff84-e6b4-4c08-8b2f-e190a6bcfe4a}</Project>

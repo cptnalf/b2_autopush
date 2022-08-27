@@ -254,68 +254,77 @@ namespace BUCommon
     public IQueryable<FreezeFile> getContainer(long accountID, string id, string name)
     {
       System.Func<Models.Hash, Hash> hashAct = (Models.Hash h) => h == null ? null : Hash.Create(h.type, h.base64);
-      var cont = _containers.Where(x => 
+      var conts = _containers.Where(x => 
                      (accountID == 0 || x.accountID == accountID)
                   && (string.IsNullOrWhiteSpace(id) || x.id == id)
                   && (string.IsNullOrWhiteSpace(name) || string.Compare(x.name, name, true) == 0)
                   )
+                  .Select(c => c.id)
                   .ToList();
 
-      if (!cont.Any()) 
+      if (!conts.Any()) 
         { return (IQueryable<FreezeFile>)(new List<FreezeFile>()); }
 
-      var files = 
+      var q = 
+        (
         from f in _db.Files
         join h in _db.Hashes on f.localHashID equals h.id
           into fhg from f1 in fhg.DefaultIfEmpty()
         join h2 in _db.Hashes on f.storedHashID equals h2.id
           into fh2g from f2 in fh2g.DefaultIfEmpty()
-        where cont.Where(c => f.containerID == c.id).Any()
-        select new FreezeFile { 
-            path=f.path
-            ,mimeType = f.mimeType
-            ,storedHash = hashAct(fhg.FirstOrDefault())
-            , localHash = hashAct(fh2g.FirstOrDefault())
-            , fileID=f.fileID
-            , modified = f.modified
-            , uploaded = f.uploaded
-            , serviceInfo = f.serviceInfo
-            , enchash = f.enchash
-            , containerID = f.containerID
-            };
+        where conts.Contains(f.containerID)
+        select new { f=f, sh=fhg, lh=fh2g}
+        ).ToList().AsQueryable()
+        ;
+      
+       var files =
+        q.Select(x =>
+        new FreezeFile { 
+            path=x.f.path
+            ,mimeType = x.f.mimeType
+            ,storedHash = hashAct(x.sh.FirstOrDefault())
+            , localHash = hashAct(x.lh.FirstOrDefault())
+            , fileID=x.f.fileID
+            , modified = x.f.modified
+            , uploaded = x.f.uploaded
+            , serviceInfo = x.f.serviceInfo
+            , enchash = x.f.enchash
+            , containerID = x.f.containerID
+            }
+        );
       
       return files;
     }
 
     public IQueryable<FreezeFile> getContNoHash(long accountID, string id, string name)
     {
-      System.Func<Models.Hash, Hash> hashAct = (Models.Hash h) => h == null ? null : Hash.Create(h.type, h.base64);
-      var cont = _containers.Where(x => 
+      var conts = _containers.Where(x => 
                      (accountID == 0 || x.accountID == accountID)
                   && (string.IsNullOrWhiteSpace(id) || x.id == id)
                   && (string.IsNullOrWhiteSpace(name) || string.Compare(x.name, name, true) == 0)
                   )
+                  .Select(c => c.id)
                   .ToList();
 
-      if (!cont.Any()) 
+      if (!conts.Any()) 
         { return (IQueryable<FreezeFile>)(new List<FreezeFile>()); }
 
-      var files = 
+      var files =
         from f in _db.Files
-        where cont.Where(c => f.containerID == c.id).Any()
+        where conts.Contains(f.containerID)
         select new FreezeFile { 
-            path=f.path
-            ,mimeType = f.mimeType
-            ,storedHash = null
-            , localHash = null
-            , fileID=f.fileID
-            , modified = f.modified
-            , uploaded = f.uploaded
-            , serviceInfo = f.serviceInfo
-            , enchash = f.enchash
-            , containerID = f.containerID
-            };
-      
+          path=f.path
+          ,mimeType = f.mimeType
+          ,storedHash = null
+          , localHash = null
+          , fileID=f.fileID
+          , modified = f.modified
+          , uploaded = f.uploaded
+          , serviceInfo = f.serviceInfo
+          , enchash = f.enchash
+          , containerID = f.containerID
+          };
+
       return files;
     }
 
