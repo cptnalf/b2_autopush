@@ -46,8 +46,8 @@ namespace BackupLib
 
       maxTasks = IOUtils.DefaultTasks(maxTasks);
 
-      _addToDict(local, sorted);
-      _addToDict(provider, sorted);
+      _addToDict(local, sorted, 0);
+      _addToDict(provider, sorted, 1);
 
       byte[] keyfile;
       BlockingCollection<FileDiff> sameHashBC = null;
@@ -106,7 +106,7 @@ namespace BackupLib
               var t = Task.Run(hashAct);
               procHashes.Add(t);
             }
-        }
+        } /* use hash */
 
       foreach(var key in sorted.Keys)
         {
@@ -135,7 +135,7 @@ namespace BackupLib
       return files;
     }
 
-    private void _addToDict(IReadOnlyList<FreezeFile> src, Dictionary<string,FreezeFile[]> dict)
+    private void _addToDict(IReadOnlyList<FreezeFile> src, Dictionary<string,FreezeFile[]> dict, int id)
     {
       foreach(var l in src)
         {
@@ -146,7 +146,7 @@ namespace BackupLib
               dict.Add(l.path, lst);
             }
           
-          if (l.container == null) { lst[0] = l; }
+          if (id == 0) { lst[0] = l; }
           else { lst[1] = l; }
         }
     }
