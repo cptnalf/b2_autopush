@@ -340,26 +340,29 @@ namespace BUCommon
       System.Func<Models.Hash, Hash> hashAct = (Models.Hash h) => h == null ? null : Hash.Create(h.type, h.base64);
 
       var lst = 
+        (
         from f in _db.Files
         join h in _db.Hashes on f.localHashID equals h.id
           into fhg from f1 in fhg.DefaultIfEmpty()
         join h2 in _db.Hashes on f.storedHashID equals h2.id
           into fh2g from f2 in fh2g.DefaultIfEmpty()
         where CultureInfo.InvariantCulture.CompareInfo.IsPrefix(f.path, folder, CompareOptions.IgnoreCase)
-        select new FreezeFile { 
-            path=f.path
-            ,mimeType = f.mimeType
-            ,storedHash = hashAct(fhg.FirstOrDefault())
-            , localHash = hashAct(fh2g.FirstOrDefault())
-            , fileID=f.fileID
-            , modified = f.modified
-            , uploaded = f.uploaded
-            , serviceInfo = f.serviceInfo
-            , enchash = f.enchash
-            , containerID = f.containerID
-            };
-
-      return lst.ToList();
+        select new {f, sh=fhg, lh=fh2g}
+        ).ToList();
+        
+      return lst.Select(x => 
+        new FreezeFile { 
+            path=x.f.path
+            ,mimeType = x.f.mimeType
+            ,storedHash = hashAct(x.sh.FirstOrDefault())
+            , localHash = hashAct(x.lh.FirstOrDefault())
+            , fileID=x.f.fileID
+            , modified = x.f.modified
+            , uploaded = x.f.uploaded
+            , serviceInfo = x.f.serviceInfo
+            , enchash = x.f.enchash
+            , containerID = x.f.containerID
+            }).ToList();
     }
 
     public void save(string file)
